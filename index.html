@@ -60,7 +60,58 @@ body {
 }
 .nav-tab:hover { color: var(--text); background: var(--bg3); }
 .nav-tab.active { color: var(--gold); background: rgba(201,168,76,0.12); }
-.nav-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.nav-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+/* Mobile bottom nav */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(15,15,19,0.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  flex-direction: row; justify-content: space-around;
+}
+.mobile-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 12px; border: none; background: transparent;
+  color: var(--text3); font-family: 'DM Sans', sans-serif;
+  font-size: 10px; font-weight: 500; cursor: pointer;
+  border-radius: var(--radius-sm); transition: all 0.15s; min-width: 60px;
+}
+.mobile-nav-btn .icon { font-size: 20px; line-height: 1; }
+.mobile-nav-btn.active { color: var(--gold); }
+.mobile-nav-btn:active { background: var(--bg3); }
+/* Données sub-nav: horizontal scrollable tab bar */
+.donnees-tabs-mobile {
+  display: none;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; gap: 4px;
+  padding: 8px 12px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 56px; z-index: 50;
+  white-space: nowrap;
+}
+.donnees-tabs-mobile::-webkit-scrollbar { display: none; }
+.donnees-tab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  white-space: nowrap; transition: all 0.15s;
+}
+.donnees-tab-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+/* Phase bar pinned */
+.phase-bar-pinned {
+  display: none;
+  position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 100;
+  background: rgba(15,15,19,0.95); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 8px 12px; margin: 0 12px 12px;
+  flex-direction: row; justify-content: space-around; gap: 6px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.phase-bar-pinned .phase-tab { flex: 1; text-align: center; }
 .btn-sm {
   padding: 6px 12px; border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
@@ -346,10 +397,29 @@ body {
   .grid-4 { grid-template-columns: 1fr 1fr; }
   .rrq-compare { grid-template-columns: 1fr 1fr; }
 }
+@media (max-width: 768px) {
+  /* Hide desktop nav tabs, show mobile bottom nav */
+  .nav-tab { display: none; }
+  .nav-actions { gap: 4px; }
+  .nav-actions .btn-sm { padding: 5px 8px; font-size: 11px; }
+  .last-update { display: none; }
+  .mobile-bottom-nav { display: flex; }
+  .donnees-tabs-mobile { display: flex; }
+  /* Budget: show pinned phase bar */
+  .phase-bar-pinned { display: flex; }
+  .phase-tabs { display: none; } /* hide inline tabs on mobile */
+  /* Add bottom padding so content isn't hidden behind bottom nav */
+  .main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  /* Adjust main content padding */
+  .main-content { padding: 16px 12px; }
+  .section-content { padding: 16px 12px; }
+  .page-header { padding: 16px 12px 0; }
+}
 @media (max-width: 600px) {
-  .page-header, .section-content, .main-content { padding: 16px; }
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .results-grid { grid-template-columns: 1fr; }
+  .nav-brand span { display: none; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
 }
 /* SCENARIO SAVED */
 .scenario-saved {
@@ -386,6 +456,22 @@ body {
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     <button class="btn-sm btn-primary" onclick="recalculerTout()">⟳ Recalculer</button>
   </div>
+</nav>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <button class="mobile-nav-btn active" id="mbn-budget" onclick="showSection('budget')">
+    <span class="icon">💰</span>Budget
+  </button>
+  <button class="mobile-nav-btn" id="mbn-donnees" onclick="showSection('donnees')">
+    <span class="icon">📋</span>Données
+  </button>
+  <button class="mobile-nav-btn" id="mbn-resultats" onclick="showSection('resultats')">
+    <span class="icon">📊</span>Résultats
+  </button>
+  <button class="mobile-nav-btn" id="mbn-details" onclick="showSection('details')">
+    <span class="icon">📈</span>Détails
+  </button>
 </nav>
 
 <div class="main">
@@ -452,6 +538,12 @@ body {
           <button class="phase-tab" onclick="setPhase('nogo',null,this)">No-Go</button>
         </div>
       </div>
+      <!-- Pinned phase bar for mobile — sits above bottom nav -->
+      <div class="phase-bar-pinned" id="phase-bar-pinned">
+        <button class="phase-tab active" id="ppb-gogo" onclick="setPhase('gogo',null,null,true)">⚡ Go-Go</button>
+        <button class="phase-tab" id="ppb-slowgo" onclick="setPhase('slowgo',null,null,true)">🕐 Slow-Go</button>
+        <button class="phase-tab" id="ppb-nogo" onclick="setPhase('nogo',null,null,true)">🏠 No-Go</button>
+      </div>
 
       <div class="card">
         <div class="budget-header-cols">
@@ -482,6 +574,16 @@ body {
 <!-- SECTION 2: DONNÉES D'ENTRÉE -->
 <!-- ============================================================ -->
 <div id="section-donnees" class="section">
+  <!-- Mobile horizontal tab bar -->
+  <div class="donnees-tabs-mobile" id="donnees-tabs-mobile">
+    <button class="donnees-tab-btn active" onclick="showDonneesTabMobile('profil',this)">👥 Profil</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('epargne',this)">💼 Épargne</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('pension-a',this)">🏛 Pension A</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('pension-b',this)">🏛 Pension B</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('rrq',this)">🍁 RRQ</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('psv',this)">🏥 PSV</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('hypotheses',this)">⚙️ Hypothèses</button>
+  </div>
   <div class="section-split">
     <div class="sidebar">
       <div class="sidebar-section">Navigation</div>
@@ -1268,10 +1370,13 @@ function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
-  event.target.classList.add('active');
+  if (event && event.target) event.target.classList.add('active');
+  // Update mobile bottom nav
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  const mbn = document.getElementById('mbn-' + id);
+  if (mbn) mbn.classList.add('active');
   if (id === 'resultats') {
     if (!APP.resultats) recalculerTout();
-    // Double setTimeout: first tick shows the section, second tick renders charts
     setTimeout(function() { requestAnimationFrame(renderResultats); }, 50);
   }
   if (id === 'details') {
@@ -1283,6 +1388,19 @@ function showSection(id) {
 function showDonneesTab(tab, el) {
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
   if (el) el.classList.add('active');
+  // Sync mobile tabs
+  document.querySelectorAll('.donnees-tab-btn').forEach(b => b.classList.remove('active'));
+  renderDonneesTab(tab);
+}
+
+function showDonneesTabMobile(tab, el) {
+  // Update mobile tab buttons
+  document.querySelectorAll('.donnees-tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Update sidebar items
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  // Scroll the active tab into view
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   renderDonneesTab(tab);
 }
 
@@ -1315,14 +1433,20 @@ function reinitialiserBudget(save=true) {
   if (save) { saveData(); renderBudget(); }
 }
 
-function setPhase(phase, sidebarEl, tabEl) {
+function setPhase(phase, sidebarEl, tabEl, fromPinned) {
   APP.phase = phase;
-  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  // Update all phase-tab buttons (both inline and pinned)
   document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
   if (sidebarEl) sidebarEl.classList.add('active');
   if (tabEl) tabEl.classList.add('active');
+  // Sync pinned bar
+  const pinnedBtn = document.getElementById('ppb-' + phase);
+  if (pinnedBtn) pinnedBtn.classList.add('active');
+  // Sync sidebar
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
   const labels = { gogo: 'Phase Go-Go (55–70 ans)', slowgo: 'Phase Slow-Go (70–80 ans)', nogo: 'Phase No-Go (80+ ans)' };
-  document.getElementById('phase-label').textContent = labels[phase];
+  const lbl = document.getElementById('phase-label');
+  if (lbl) lbl.textContent = labels[phase];
   renderBudget();
 }
 
