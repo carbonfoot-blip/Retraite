@@ -1,0 +1,2752 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planificateur Retraite 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f13;
+  --bg2: #17171f;
+  --bg3: #1e1e28;
+  --bg4: #252532;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #5a5a72;
+  --gold: #c9a84c;
+  --gold2: #f0c84e;
+  --teal: #3ecfb2;
+  --teal2: #5aebd4;
+  --coral: #e8654a;
+  --blue: #5b8dee;
+  --green: #4ecb71;
+  --purple: #9b6dff;
+  --pink: #e060a0;
+  --amber: #f0a030;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+/* NAV */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(15,15,19,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px; height: 56px; gap: 4px;
+}
+.nav-brand {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; color: var(--gold);
+  margin-right: 20px; white-space: nowrap;
+}
+.nav-brand span { color: var(--text2); font-size: 12px; font-family: 'DM Sans', sans-serif; }
+.nav-tab {
+  padding: 6px 16px; border-radius: 20px;
+  border: none; background: transparent; color: var(--text2);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { color: var(--gold); background: rgba(201,168,76,0.12); }
+.nav-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+/* Mobile bottom nav */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(15,15,19,0.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  flex-direction: row; justify-content: space-around;
+}
+.mobile-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 12px; border: none; background: transparent;
+  color: var(--text3); font-family: 'DM Sans', sans-serif;
+  font-size: 10px; font-weight: 500; cursor: pointer;
+  border-radius: var(--radius-sm); transition: all 0.15s; min-width: 60px;
+}
+.mobile-nav-btn .icon { font-size: 20px; line-height: 1; }
+.mobile-nav-btn.active { color: var(--gold); }
+.mobile-nav-btn:active { background: var(--bg3); }
+/* Données sub-nav: horizontal scrollable tab bar */
+.donnees-tabs-mobile {
+  display: none;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; gap: 4px;
+  padding: 8px 12px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 56px; z-index: 50;
+  white-space: nowrap;
+}
+.donnees-tabs-mobile::-webkit-scrollbar { display: none; }
+.donnees-tab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  white-space: nowrap; transition: all 0.15s;
+}
+.donnees-tab-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+/* Phase bar pinned */
+.phase-bar-pinned {
+  display: none;
+  position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 100;
+  background: rgba(15,15,19,0.95); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 8px 12px; margin: 0 12px 12px;
+  flex-direction: row; justify-content: space-around; gap: 6px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.phase-bar-pinned .phase-tab { flex: 1; text-align: center; }
+.btn-sm {
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--text2);
+}
+.btn-sm:hover { color: var(--text); border-color: var(--border2); background: var(--bg4); }
+.btn-primary {
+  background: var(--gold); color: #0f0f13; border-color: var(--gold);
+}
+.btn-primary:hover { background: var(--gold2); }
+/* MAIN */
+.main { padding-top: 56px; }
+.section { display: none; }
+.section.active { display: block; }
+/* PAGE HEADER */
+.page-header {
+  padding: 32px 32px 0;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+}
+.page-title {
+  font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text);
+}
+.page-subtitle { color: var(--text2); font-size: 13px; margin-top: 4px; }
+/* CARDS */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.card-title {
+  font-family: 'DM Serif Display', serif; font-size: 16px;
+  color: var(--gold); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+/* GRID */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+/* FORM */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text3);
+}
+.form-input, .form-select {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  padding: 9px 12px; width: 100%;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus {
+  outline: none; border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+}
+.form-input::placeholder { color: var(--text3); }
+.form-select option { background: var(--bg3); }
+.form-hint { font-size: 11px; color: var(--text3); }
+.form-computed {
+  background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 14px; color: var(--gold); font-weight: 500;
+}
+/* SECTION SPLITTER */
+.section-content { padding: 24px 32px; }
+.section-split {
+  display: grid; grid-template-columns: 280px 1fr; gap: 0;
+  min-height: calc(100vh - 56px);
+}
+.sidebar {
+  background: var(--bg2); border-right: 1px solid var(--border);
+  padding: 20px 16px; position: sticky; top: 56px;
+  height: calc(100vh - 56px); overflow-y: auto;
+}
+.sidebar-item {
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--text2); font-size: 13px;
+  transition: all 0.15s; margin-bottom: 2px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-item:hover { background: var(--bg3); color: var(--text); }
+.sidebar-item.active { background: rgba(201,168,76,0.1); color: var(--gold); }
+.sidebar-icon { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+.sidebar-section {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text3); font-weight: 600; padding: 16px 12px 6px;
+}
+.main-content { padding: 24px 28px; overflow-y: auto; }
+/* CONJOINT TOGGLE */
+.conjoint-tabs {
+  display: flex; gap: 0; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px;
+}
+.conjoint-tab {
+  flex: 1; padding: 10px; text-align: center; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text2);
+  background: transparent; border: none; transition: all 0.15s;
+}
+.conjoint-tab.active-a { background: rgba(91,141,238,0.15); color: var(--blue); }
+.conjoint-tab.active-b { background: rgba(158,96,160,0.15); color: var(--pink); }
+/* SCÉNARIO BUTTONS */
+.scenario-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.scenario-btn {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2);
+  background: transparent; color: var(--text2); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+}
+.scenario-btn:hover { border-color: var(--gold); color: var(--gold); }
+.scenario-btn.active { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); }
+/* STAT CARDS */
+.stat-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.stat-label { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+.stat-value { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--text); }
+.stat-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.stat-green .stat-value { color: var(--green); }
+.stat-coral .stat-value { color: var(--coral); }
+.stat-gold .stat-value { color: var(--gold); }
+.stat-blue .stat-value { color: var(--blue); }
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+}
+.badge-green { background: rgba(78,203,113,0.12); color: var(--green); }
+.badge-coral { background: rgba(232,101,74,0.12); color: var(--coral); }
+.badge-gold { background: rgba(201,168,76,0.12); color: var(--gold); }
+.badge-blue { background: rgba(91,141,238,0.12); color: var(--blue); }
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.data-table th {
+  padding: 8px 10px; text-align: right; font-weight: 600;
+  font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text3); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table th:first-child { text-align: left; }
+.data-table td {
+  padding: 7px 10px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text2); white-space: nowrap;
+}
+.data-table td:first-child { text-align: left; color: var(--text); }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.data-table tr.retraite-row td { background: rgba(201,168,76,0.04); }
+.data-table tr.deficit-row td { background: rgba(232,101,74,0.06); }
+.data-table tr.deficit-row td { color: var(--coral); }
+.data-table .positive { color: var(--green); }
+.data-table .negative { color: var(--coral); }
+.data-table .gold { color: var(--gold); }
+/* DIVIDER */
+.divider {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+/* ALERT */
+.alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.5;
+}
+.alert-warn { background: rgba(232,101,74,0.1); border: 1px solid rgba(232,101,74,0.2); color: #f09070; }
+.alert-ok { background: rgba(78,203,113,0.1); border: 1px solid rgba(78,203,113,0.2); color: var(--green); }
+.alert-info { background: rgba(91,141,238,0.1); border: 1px solid rgba(91,141,238,0.2); color: var(--blue); }
+/* RRQ COMPARISON */
+.rrq-compare {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.rrq-option {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.rrq-option:hover { border-color: var(--gold); }
+.rrq-option.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+.rrq-option-age { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.rrq-option-montant { font-size: 20px; font-family: 'DM Serif Display', serif; color: var(--gold); }
+.rrq-option-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+/* BUDGET TABLE */
+.budget-table { width: 100%; }
+.budget-cat-header {
+  font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--gold); font-weight: 600; padding: 12px 8px 6px;
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+}
+.budget-row {
+  display: grid; grid-template-columns: 1fr 120px 120px 32px;
+  gap: 8px; align-items: center; padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.budget-row:hover { background: rgba(255,255,255,0.02); }
+.budget-total-row {
+  display: grid; grid-template-columns: 1fr 120px 120px 32px;
+  gap: 8px; align-items: center; padding: 8px 8px;
+  background: var(--bg3); border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+.budget-input {
+  background: var(--bg3); border: 1px solid transparent;
+  border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; padding: 5px 8px; width: 100%; text-align: right;
+  transition: all 0.15s;
+}
+.budget-input:focus { outline: none; border-color: var(--gold); background: var(--bg4); }
+.budget-computed {
+  font-size: 13px; color: var(--text2); text-align: right; padding: 5px 8px;
+}
+.del-btn {
+  width: 24px; height: 24px; border-radius: 4px; border: none;
+  background: transparent; color: var(--text3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  transition: all 0.15s;
+}
+.del-btn:hover { background: rgba(232,101,74,0.15); color: var(--coral); }
+.add-row-btn {
+  background: none; border: 1px dashed var(--border2); border-radius: var(--radius-sm);
+  color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  padding: 7px 12px; cursor: pointer; width: 100%; text-align: left;
+  transition: all 0.15s; margin-top: 6px;
+}
+.add-row-btn:hover { border-color: var(--gold); color: var(--gold); }
+/* PHASE TABS */
+.phase-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.phase-tab {
+  padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text2); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+}
+.phase-tab.active { border-color: var(--teal); color: var(--teal); background: rgba(62,207,178,0.1); }
+/* SCROLL */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+/* TOGGLE */
+.toggle-group { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  width: 36px; height: 20px; background: var(--bg4); border-radius: 10px;
+  position: relative; cursor: pointer; transition: background 0.2s;
+  border: 1px solid var(--border2); flex-shrink: 0;
+}
+.toggle.on { background: var(--gold); border-color: var(--gold); }
+.toggle::after {
+  content: ''; position: absolute; width: 14px; height: 14px;
+  background: white; border-radius: 50%; top: 2px; left: 2px;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(16px); }
+/* SEPARATOR */
+.sep { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text3); font-weight: 600; margin: 20px 0 10px; }
+/* MISE À JOUR RAPIDE */
+.update-banner {
+  background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(62,207,178,0.06) 100%);
+  border: 1px solid rgba(201,168,76,0.2); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap;
+}
+.update-date { font-size: 12px; color: var(--text3); }
+/* SECTION BUDGET specifics */
+.budget-header-cols {
+  display: grid; grid-template-columns: 1fr 120px 120px 32px;
+  gap: 8px; padding: 4px 8px 8px;
+}
+.budget-header-cols span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); font-weight: 600; text-align: right; }
+.budget-header-cols span:first-child { text-align: left; }
+/* RESULTS SECTION */
+.results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 32px; }
+.chart-container { position: relative; width: 100%; height: 320px; }
+/* TOOLTIP */
+.tooltip-val {
+  background: var(--bg4); border: 1px solid var(--border2);
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--text);
+}
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .section-split { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .rrq-compare { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  /* Hide desktop nav tabs, show mobile bottom nav */
+  .nav-tab { display: none; }
+  .nav-actions { gap: 4px; }
+  .nav-actions .btn-sm { padding: 5px 8px; font-size: 11px; }
+  .last-update { display: none; }
+  .mobile-bottom-nav { display: flex; }
+  .donnees-tabs-mobile { display: flex; }
+  /* Budget: show pinned phase bar */
+  .phase-bar-pinned { display: flex; }
+  .phase-tabs { display: none; } /* hide inline tabs on mobile */
+  /* Add bottom padding so content isn't hidden behind bottom nav */
+  .main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  /* Adjust main content padding */
+  .main-content { padding: 16px 12px; }
+  .section-content { padding: 16px 12px; }
+  .page-header { padding: 16px 12px 0; }
+}
+@media (max-width: 600px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .results-grid { grid-template-columns: 1fr; }
+  .nav-brand span { display: none; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+}
+/* SCENARIO SAVED */
+.scenario-saved {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer;
+  transition: all 0.15s;
+}
+.scenario-saved:hover { border-color: var(--gold); }
+.scenario-saved.current { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+.scenario-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.scenario-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+/* LAST UPDATE */
+.last-update {
+  font-size: 11px; color: var(--text3);
+  padding: 6px 12px; background: var(--bg3);
+  border-radius: 20px; border: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand" id="nav-brand">Retraite<span>&nbsp;2026</span></div>
+  <button class="nav-tab active" onclick="showSection('budget')">💰 Budget</button>
+  <button class="nav-tab" onclick="showSection('donnees')">📋 Données</button>
+  <button class="nav-tab" onclick="showSection('resultats')">📊 Résultats</button>
+  <button class="nav-tab" onclick="showSection('details')">📈 Détails</button>
+  <div class="nav-actions">
+    <span class="last-update" id="lastUpdate">—</span>
+    <button class="btn-sm" onclick="confirmerReset()" style="color:var(--coral); border-color:rgba(232,101,74,0.3);">✕ Reset</button>
+    <button class="btn-sm" onclick="exportData()">⬇ Export</button>
+    <button class="btn-sm" onclick="document.getElementById('importFile').click()">⬆ Import</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn-sm btn-primary" onclick="recalculerTout()">⟳ Recalculer</button>
+  </div>
+</nav>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <button class="mobile-nav-btn active" id="mbn-budget" onclick="showSection('budget')">
+    <span class="icon">💰</span>Budget
+  </button>
+  <button class="mobile-nav-btn" id="mbn-donnees" onclick="showSection('donnees')">
+    <span class="icon">📋</span>Données
+  </button>
+  <button class="mobile-nav-btn" id="mbn-resultats" onclick="showSection('resultats')">
+    <span class="icon">📊</span>Résultats
+  </button>
+  <button class="mobile-nav-btn" id="mbn-details" onclick="showSection('details')">
+    <span class="icon">📈</span>Détails
+  </button>
+</nav>
+
+<div class="main">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: BUDGET RETRAITE -->
+<!-- ============================================================ -->
+<div id="section-budget" class="section active">
+  <div class="section-split">
+    <div class="sidebar">
+      <div class="sidebar-section">Phases</div>
+      <div class="sidebar-item active" onclick="setPhase('gogo',this)">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Go-Go (55–70 ans)
+      </div>
+      <div class="sidebar-item" onclick="setPhase('slowgo',this)">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Slow-Go (70–80 ans)
+      </div>
+      <div class="sidebar-item" onclick="setPhase('nogo',this)">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        No-Go (80+ ans)
+      </div>
+      <div class="sidebar-section">Résumé</div>
+      <div style="padding: 4px 12px;">
+        <div class="stat-card" style="margin-bottom:10px;">
+          <div class="stat-label">Budget annuel</div>
+          <div class="stat-value" id="sidebar-total" style="font-size:20px;">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Budget mensuel</div>
+          <div class="stat-value" id="sidebar-mensuel" style="font-size:20px;">—</div>
+        </div>
+      </div>
+      <div class="sidebar-section">Hypothèque / Auto</div>
+      <div style="padding: 4px 12px;">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Paiement hypothèque/auto actuel ($/mois)</label>
+          <input type="number" class="form-input" id="hypo-paiement" value="2233" oninput="updateHypo()">
+        </div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Fin hypothèque (année)</label>
+          <input type="number" class="form-input" id="hypo-fin" value="2037" oninput="updateHypo()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Voiture: coût mensuel remplacement</label>
+          <input type="number" class="form-input" id="auto-mensuel" value="833" oninput="updateHypo()">
+        </div>
+        <div style="margin-top:12px; padding:10px; background:var(--bg3); border-radius:var(--radius-sm);">
+          <div class="stat-label">Moyenne calculée/mois</div>
+          <div class="stat-value" id="hypo-moyenne" style="font-size:16px; color:var(--teal);">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="main-content">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div class="page-title">Budget Retraite</div>
+          <div class="page-subtitle">Dépenses projetées à la retraite • <span id="phase-label">Phase Go-Go (55–70 ans)</span></div>
+        </div>
+        <div class="phase-tabs">
+          <button class="phase-tab active" onclick="setPhase('gogo',null,this)">Go-Go</button>
+          <button class="phase-tab" onclick="setPhase('slowgo',null,this)">Slow-Go</button>
+          <button class="phase-tab" onclick="setPhase('nogo',null,this)">No-Go</button>
+        </div>
+      </div>
+      <!-- Pinned phase bar for mobile — sits above bottom nav -->
+      <div class="phase-bar-pinned" id="phase-bar-pinned">
+        <button class="phase-tab active" id="ppb-gogo" onclick="setPhase('gogo',null,null,true)">⚡ Go-Go</button>
+        <button class="phase-tab" id="ppb-slowgo" onclick="setPhase('slowgo',null,null,true)">🕐 Slow-Go</button>
+        <button class="phase-tab" id="ppb-nogo" onclick="setPhase('nogo',null,null,true)">🏠 No-Go</button>
+      </div>
+
+      <div class="card">
+        <div class="budget-header-cols">
+          <span>Poste</span>
+          <span>Mensuel</span>
+          <span>Annuel</span>
+          <span></span>
+        </div>
+        <div id="budget-categories"></div>
+        <hr class="divider" style="margin:12px 0;">
+        <div class="budget-total-row">
+          <span style="font-weight:600; color:var(--text);">Total des dépenses</span>
+          <span style="text-align:right; color:var(--text); font-weight:600;" id="total-mensuel-display">0 $</span>
+          <span style="text-align:right; color:var(--gold); font-weight:600; font-size:16px;" id="total-annuel-display">0 $</span>
+          <span></span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn-sm" onclick="ajouterCategorie()">+ Ajouter catégorie</button>
+        <button class="btn-sm" onclick="reinitialiserBudget()">↺ Réinitialiser défaut</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: DONNÉES D'ENTRÉE -->
+<!-- ============================================================ -->
+<div id="section-donnees" class="section">
+  <!-- Mobile horizontal tab bar -->
+  <div class="donnees-tabs-mobile" id="donnees-tabs-mobile">
+    <button class="donnees-tab-btn active" onclick="showDonneesTabMobile('profil',this)">👥 Profil</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('epargne',this)">💼 Épargne</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('pension-a',this)">🏛 Pension A</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('pension-b',this)">🏛 Pension B</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('rrq',this)">🍁 RRQ</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('psv',this)">🏥 PSV</button>
+    <button class="donnees-tab-btn" onclick="showDonneesTabMobile('hypotheses',this)">⚙️ Hypothèses</button>
+  </div>
+  <div class="section-split">
+    <div class="sidebar">
+      <div class="sidebar-section">Navigation</div>
+      <div class="sidebar-item active" onclick="showDonneesTab('profil',this)">👥 Profil du couple</div>
+      <div class="sidebar-item" onclick="showDonneesTab('epargne',this)">💼 Épargne</div>
+      <div class="sidebar-item" onclick="showDonneesTab('pension-a',this)">🏛 Pension — A</div>
+      <div class="sidebar-item" onclick="showDonneesTab('pension-b',this)">🏛 Pension — B</div>
+      <div class="sidebar-item" onclick="showDonneesTab('rrq',this)">🍁 RRQ</div>
+      <div class="sidebar-item" onclick="showDonneesTab('psv',this)">🏥 PSV</div>
+      <div class="sidebar-item" onclick="showDonneesTab('hypotheses',this)">⚙️ Hypothèses</div>
+      <div class="sidebar-section">Scénarios</div>
+      <div id="scenarios-list"></div>
+      <button class="btn-sm" onclick="sauvegarderScenario()" style="width:100%; margin-top:8px;">+ Sauvegarder scénario</button>
+    </div>
+    <div class="main-content" id="donnees-content">
+      <!-- Dynamic content loaded here -->
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: RÉSULTATS SOMMAIRES -->
+<!-- ============================================================ -->
+<div id="section-resultats" class="section">
+  <div class="section-content">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div class="page-title">Résultats Sommaires</div>
+        <div class="page-subtitle" id="resultats-subtitle">Projection sur 55 ans</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;" id="scenario-compare-btns"></div>
+    </div>
+
+    <div id="alert-capital" style="margin-bottom:20px;"></div>
+
+    <div class="grid grid-4" style="margin-bottom:24px;">
+      <div class="stat-card stat-gold">
+        <div class="stat-label">Revenu net retraite</div>
+        <div class="stat-value" id="res-revenu-net">—</div>
+        <div class="stat-sub" id="res-revenu-pct">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">% d'épargne actuel</div>
+        <div class="stat-value" id="res-epargne-pct">—</div>
+        <div class="stat-sub">Min recommandé: 10%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Années avant retraite</div>
+        <div class="stat-value" id="res-annees-retraite">—</div>
+        <div class="stat-sub" id="res-age-retraite">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rendement utilisé</div>
+        <div class="stat-value" id="res-rendement">—</div>
+        <div class="stat-sub" id="res-rendement-ret">—</div>
+      </div>
+      <div class="stat-card stat-green" style="grid-column: 1 / -1;">
+        <div class="stat-label">Capital résiduel à 100 ans — <span id="res-capital100-label">—</span></div>
+        <div class="stat-value" id="res-capital100">—</div>
+        <div class="stat-sub" id="res-capital100-sub">—</div>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>Évolution du capital</div>
+        <div class="chart-container">
+          <canvas id="chart-capital" role="img" aria-label="Courbe d'évolution du capital de la retraite"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot" style="background:var(--teal)"></div>Sources de revenu</div>
+        <div class="chart-container">
+          <canvas id="chart-sources" role="img" aria-label="Sources de revenu empilées par année"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title"><div class="dot" style="background:var(--blue)"></div>Comparaison de scénarios</div>
+      <div class="grid grid-4" id="scenario-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: DÉTAILS RÉSULTATS -->
+<!-- ============================================================ -->
+<div id="section-details" class="section">
+  <div class="section-content">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div class="page-title">Détails Annuels</div>
+        <div class="page-subtitle">Vue ligne par ligne de la projection</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select class="form-select" id="filter-details" onchange="filtrerDetails()" style="width:auto;">
+          <option value="all">Toutes les années</option>
+          <option value="retraite">Retraite seulement</option>
+          <option value="gogo">Phase Go-Go</option>
+          <option value="slowgo">Phase Slow-Go</option>
+          <option value="nogo">Phase No-Go</option>
+        </select>
+        <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <table class="data-table" id="details-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Année</th>
+            <th>Âge A</th>
+            <th>Âge B</th>
+            <th>Capital début</th>
+            <th>Pension A</th>
+            <th>Pension B</th>
+            <th>RRQ</th>
+            <th>PSV</th>
+            <th>Location</th>
+            <th>Travail</th>
+            <th>Impôts</th>
+            <th>Revenu net</th>
+            <th>Dépenses</th>
+            <th>Surplus/Déficit</th>
+            <th>REER A</th>
+            <th>REER B</th>
+            <th>CELI A</th>
+            <th>CELI B</th>
+            <th>Capital fin</th>
+          </tr>
+        </thead>
+        <tbody id="details-tbody">
+          <tr><td colspan="19" style="text-align:center; padding:40px; color:var(--text3);">Configurez les données d'entrée et cliquez sur Recalculer</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ============================================================
+// ENGINE INTÉGRÉ (copie de engine.js)
+// ============================================================
+const FISCAL_2026 = {
+  annee: 2026,
+  prov: {
+    mpb: 18952,
+    tranches: [45105, 90200, 109755],
+    taux: [0.15, 0.20, 0.24, 0.2575],
+    creditAge: { montant: 3798, seuil: 40925, max: 61181, penalite: 0.1875 },
+    creditPension: { max: 506, seuil: 40925, montantMax: 3374, taux: 0.1875 },
+    abattement: 0.165,
+  },
+  fed: {
+    mpb: 16452,
+    tranches: [58523, 117045, 181440, 258482],
+    taux: [0.14, 0.205, 0.26, 0.29, 0.33],
+    creditAge: { montant: 8790, seuil: 44325, max: 102925, penalite: 0.15 },
+    creditPension: { max: 251, montantMax: 2000, taux: 0.15 },
+  },
+  celi: { plafond: 7000 },
+  ferr: {
+    71:0.0528,72:0.054,73:0.0553,74:0.0567,75:0.0582,76:0.0598,77:0.0617,
+    78:0.0636,79:0.0658,80:0.0682,81:0.0708,82:0.0738,83:0.0771,
+    84:0.0808,85:0.0851,86:0.0899,87:0.0955,88:0.1021,89:0.1099,
+    90:0.1192,91:0.1306,92:0.1449,93:0.1634,94:0.1879,95:0.20
+  },
+  rrq: {
+    mga: 74600,
+    renteMax65: 18091.80,
+    indexation: 0.02,
+    coordRREGOP: 0.007,
+  },
+  psv: { mensuel65: 727.67, seuil: 79845, tauxRecup: 0.15, bonif70: 0.36 },
+  inflation: 0.025,
+};
+
+function calculerRRQ(p) {
+  const F = FISCAL_2026;
+  const ratio = Math.min((p.revenusCotisesMoyens || 0) / F.rrq.mga, 1.0);
+  const renteBase65 = ratio * F.rrq.renteMax65;
+  const ageActuel = p.anneeCalc - p.anneeNaissance;
+  const anneesDemande = p.ageDemandeRRQ - ageActuel;
+  const renteIdx65 = renteBase65 * Math.pow(1 + F.rrq.indexation, Math.max(0, anneesDemande));
+  if (p.ageDemandeRRQ === 65) return Math.max(0, renteIdx65);
+  if (p.ageDemandeRRQ < 65) {
+    const mois = (65 - p.ageDemandeRRQ) * 12;
+    return Math.max(0, renteIdx65 * (1 - 0.006 * mois));
+  }
+  const mois = (p.ageDemandeRRQ - 65) * 12;
+  return Math.max(0, renteIdx65 * (1 + 0.007 * mois));
+}
+
+function calculerOptionsRRQ(p) {
+  return {
+    rrq60: calculerRRQ({...p, ageDemandeRRQ:60}),
+    rrq65: calculerRRQ({...p, ageDemandeRRQ:65}),
+    rrq70: calculerRRQ({...p, ageDemandeRRQ:70}),
+    rrq72: calculerRRQ({...p, ageDemandeRRQ:72}),
+  };
+}
+
+function calculerPSV(anneeNaissance, anneeCalc, ageDemande) {
+  const F = FISCAL_2026;
+  const ageActuel = anneeCalc - anneeNaissance;
+  const anneesDemande = ageDemande - ageActuel;
+  let montant = F.psv.mensuel65 * 12;
+  if (ageDemande === 70) montant *= (1 + F.psv.bonif70);
+  return montant * Math.pow(1 + F.rrq.indexation, Math.max(0, anneesDemande));
+}
+
+function calculerPensionPD(p) {
+  const F = FISCAL_2026;
+  const anneesFinEmploi = p.anneesServiceActuel + Math.max(0, p.anneeRetraite - 2026);
+  const renteBase = p.tauxAccumulation * anneesFinEmploi * p.salaire;
+  let coordMontant = 0;
+  if (p.coordRRQ && p.typeRegime === 'rregop') {
+    coordMontant = F.rrq.coordRREGOP * anneesFinEmploi * Math.min(p.salaire, F.rrq.mga);
+  }
+  const renteAvantReduction = renteBase - coordMontant;
+  let rente = renteAvantReduction;
+  if (p.ageRetraite < p.ageSansPenalite && p.ageRetraite >= (p.ageSansPenalite - 10)) {
+    const annees = p.ageSansPenalite - p.ageRetraite;
+    rente = renteAvantReduction * (1 - p.tauxReductionAnnuel * annees);
+  } else if (p.ageRetraite < 55 && p.ageDebutDecaissement > p.ageRetraite) {
+    const anneesAttente = p.ageDebutDecaissement - p.ageRetraite;
+    rente = renteAvantReduction * Math.pow(1 + (p.indexationReport || 0.02), anneesAttente);
+  }
+  return {
+    renteBase, coordMontant,
+    renteAvantReduction,
+    reduction: Math.max(0, p.ageSansPenalite - p.ageRetraite) * p.tauxReductionAnnuel,
+    renteAuDebut: Math.max(0, rente),
+    indexationRente: p.indexationRente || 0.02,
+    ageDebutDecaissement: p.ageDebutDecaissement || 65,
+  };
+}
+
+function calculerImpots(revenu, ageA, ageB, revPensions, couple, annee) {
+  const F = FISCAL_2026;
+  const idx = Math.pow(1 + F.inflation, annee - 2026);
+  let impotFed = 0;
+  const mpbF = F.fed.mpb * idx;
+  const tF = F.fed.tranches.map(t => t * idx);
+  const paliersF = [mpbF, ...tF, Infinity];
+  for (let i = 0; i < F.fed.taux.length; i++) {
+    if (revenu > paliersF[i])
+      impotFed += Math.min(revenu - paliersF[i], paliersF[i+1] - paliersF[i]) * F.fed.taux[i];
+  }
+  // Crédit âge fédéral (simplifié)
+  const nb65F = (ageA > 64 ? 1 : 0) + (ageB > 64 ? 1 : 0);
+  if (nb65F > 0) {
+    const ca = F.fed.creditAge;
+    const rev1 = revenu / (couple ? 2 : 1);
+    if (rev1 < ca.max * idx) {
+      const mnt = ca.montant * idx * nb65F;
+      const red = Math.max(0, (rev1 - ca.seuil * idx) * ca.penalite);
+      impotFed -= Math.max(0, mnt - red) * 0.14 * (1 - F.prov.abattement);
+    }
+  }
+  // Crédit pension fédéral
+  if (revPensions > 0) {
+    const cpF = Math.min(F.fed.creditPension.max * idx, revPensions * F.fed.creditPension.taux);
+    impotFed -= cpF;
+  }
+  const abattement = impotFed * F.prov.abattement;
+  impotFed = Math.max(0, impotFed - abattement);
+
+  let impotProv = 0;
+  const mpbP = F.prov.mpb * idx;
+  const tP = F.prov.tranches.map(t => t * idx);
+  const paliersP = [mpbP, ...tP, Infinity];
+  for (let i = 0; i < F.prov.taux.length; i++) {
+    if (revenu > paliersP[i])
+      impotProv += Math.min(revenu - paliersP[i], paliersP[i+1] - paliersP[i]) * F.prov.taux[i];
+  }
+  const nb65P = (ageA > 64 ? 1 : 0) + (ageB > 64 ? 1 : 0);
+  if (nb65P > 0) {
+    const ca = F.prov.creditAge;
+    const rev1 = revenu / (couple ? 2 : 1);
+    if (rev1 < ca.max * idx) {
+      const mnt = ca.montant * idx * nb65P;
+      const red = Math.max(0, (rev1 - ca.seuil * idx) * ca.penalite);
+      impotProv -= Math.max(0, mnt - red) * F.prov.taux[0];
+    }
+  }
+  if (revPensions > 0) {
+    const cpP = Math.min(F.prov.creditPension.max * idx, revPensions * F.prov.creditPension.taux);
+    impotProv -= cpP;
+  }
+  return { fed: Math.max(0, impotFed), prov: Math.max(0, impotProv), total: Math.max(0, impotFed) + Math.max(0, impotProv) };
+}
+
+function retraitFERR(solde, age) {
+  if (age < 71) return 0;
+  const t = FISCAL_2026.ferr;
+  return solde * (age >= 95 ? t[95] : (t[age] || t[95]));
+}
+
+function projeterRetraite(inp) {
+  const {
+    anneeCalc=2026,
+    prenomA='A', anneeNaissanceA=1981, anneeRetraiteA=2027,
+    reerA_solde=0, celiA_solde=0, droitsReerA=0, droitsCeliA=0,
+    epargneAnnuelleA=0, pctReerA=0.18, salaireBrutA=0,
+    pensionAData=null, rrqA_montant=0, ageRRQA=65, psvA_montant=0, agePSVA=65,
+    prenomB='B', anneeNaissanceB=0, anneeRetraiteB=2027,
+    reerB_solde=0, celiB_solde=0, droitsReerB=0, droitsCeliB=0,
+    epargneAnnuelleB=0, pctReerB=0.05, salaireBrutB=0,
+    pensionBData=null, rrqB_montant=0, ageRRQB=65, psvB_montant=0, agePSVB=65,
+    nonEnregistre_solde=0,
+    revenuLocation=0, indexationLocation=0.02,
+    budgetRetraite=80000,
+    budgetSlowgo=null,
+    budgetNogo=null,
+    anneeDeuxiemeRetraite=2026,
+    inflation=0.025, rendementAccumulation=0.06, rendementRetraite=0.045,
+    augmentationSalaire=0,
+    strategieDecaissement='reer_first',
+  } = inp;
+
+  const couple = anneeNaissanceB > 0;
+  const anneeFin = Math.min(anneeNaissanceA + 101, anneeCalc + 70);
+
+  let st = {
+    reerA: reerA_solde, reerB: reerB_solde,
+    celiA: celiA_solde, celiB: celiB_solde,
+    nonEnreg: nonEnregistre_solde,
+    droitsCeliA: (droitsCeliA || 0) + FISCAL_2026.celi.plafond,
+    droitsCeliB: (droitsCeliB || 0) + FISCAL_2026.celi.plafond,
+    pensionA: 0, pensionB: 0,
+    coordAAppliquee: false, coordBAppliquee: false,
+    rrqAActif: false, rrqBActif: false,
+    psvAActif: false, psvBActif: false,
+    rrq: 0, psv: 0, revLoc: revenuLocation || 0,
+  };
+
+  const lignes = [];
+  let capitalEpuise = null;
+
+  for (let annee = anneeCalc; annee <= anneeFin; annee++) {
+    const ageA = annee - anneeNaissanceA;
+    const ageB = couple ? annee - anneeNaissanceB : 0;
+    // Phase retraite par conjoint — indépendants
+    const enRetraiteA = annee >= anneeRetraiteA;
+    const enRetraiteB = couple ? annee >= anneeRetraiteB : false;
+    // Phase décaissement globale = au moins un en retraite
+    const enRetraite = enRetraiteA || enRetraiteB;
+    // Phase accumulation = les deux encore en activité
+    const enAccumulation = !enRetraiteA && (couple ? !enRetraiteB : true);
+
+    // --- Revenus travail ---
+    const sA = !enRetraiteA && salaireBrutA > 0
+      ? salaireBrutA * Math.pow(1 + augmentationSalaire, annee - anneeCalc)
+      : 0;
+    const sB = couple && !enRetraiteB && salaireBrutB > 0
+      ? salaireBrutB * Math.pow(1 + augmentationSalaire, annee - anneeCalc)
+      : 0;
+
+    // --- Indexation revenu location ---
+    if (annee > anneeCalc && st.revLoc > 0) st.revLoc *= (1 + (indexationLocation || 0.02));
+
+    // --- Pension A ---
+    if (pensionAData && enRetraiteA && ageA >= (pensionAData.ageDebutDecaissement || 65)) {
+      if (st.pensionA === 0) {
+        st.pensionA = pensionAData.renteAuDebut;
+      } else {
+        // Coordination RRQ à 65 ans — réduction permanente une seule fois
+        if (ageA === 65 && pensionAData.coordMontant > 0 && !st.coordAAppliquee) {
+          const coordIdx = pensionAData.coordMontant *
+            Math.pow(1 + (pensionAData.indexationRente || 0.02),
+              ageA - (pensionAData.ageDebutDecaissement || 65));
+          st.pensionA = Math.max(0, st.pensionA - coordIdx);
+          st.coordAAppliquee = true;
+        }
+        st.pensionA *= (1 + (pensionAData.indexationRente || 0.02));
+      }
+    }
+
+    // --- Pension B ---
+    if (pensionBData && couple && enRetraiteB && ageB >= (pensionBData.ageDebutDecaissement || 65)) {
+      if (st.pensionB === 0) {
+        st.pensionB = pensionBData.renteAuDebut;
+      } else {
+        if (ageB === 65 && pensionBData.coordMontant > 0 && !st.coordBAppliquee) {
+          const coordIdx = pensionBData.coordMontant *
+            Math.pow(1 + (pensionBData.indexationRente || 0.02),
+              ageB - (pensionBData.ageDebutDecaissement || 65));
+          st.pensionB = Math.max(0, st.pensionB - coordIdx);
+          st.coordBAppliquee = true;
+        }
+        st.pensionB *= (1 + (pensionBData.indexationRente || 0.02));
+      }
+    }
+
+    // --- RRQ — s'active à l'âge choisi, indexé chaque année après ---
+    if (!st.rrqAActif && rrqA_montant > 0 && ageA >= ageRRQA) {
+      st.rrq += rrqA_montant;
+      st.rrqAActif = true;
+    }
+    if (couple && !st.rrqBActif && rrqB_montant > 0 && ageB >= ageRRQB) {
+      st.rrq += rrqB_montant;
+      st.rrqBActif = true;
+    }
+    if (st.rrq > 0 && annee > anneeCalc) st.rrq *= (1 + FISCAL_2026.rrq.indexation);
+
+    // --- PSV — s'active à l'âge choisi, indexé chaque année après ---
+    if (!st.psvAActif && psvA_montant > 0 && ageA >= agePSVA) {
+      st.psv += psvA_montant;
+      st.psvAActif = true;
+    }
+    if (couple && !st.psvBActif && psvB_montant > 0 && ageB >= agePSVB) {
+      st.psv += psvB_montant;
+      st.psvBActif = true;
+    }
+    if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
+
+    // Budget selon la phase: Go-Go dès la retraite, Slow-Go à 70 ans A, No-Go à 80 ans A
+    const agePivot = ageA; // on base les phases sur l'âge du conjoint A
+    const budgetBase = enRetraite
+      ? (agePivot >= 80 && budgetNogo ? budgetNogo
+        : agePivot >= 70 && budgetSlowgo ? budgetSlowgo
+        : budgetRetraite)
+      : 0;
+    const depenses = budgetBase * Math.pow(1 + (inflation || 0.025), annee - anneeCalc);
+    const rendement = enRetraite ? (rendementRetraite || 0.045) : (rendementAccumulation || 0.06);
+    const capitalDebut = Math.max(0, st.reerA + st.reerB + st.celiA + st.celiB + st.nonEnreg);
+
+    const ferrA = retraitFERR(st.reerA, ageA);
+    const ferrB = couple ? retraitFERR(st.reerB, ageB) : 0;
+
+    // --- Revenus bruts ---
+    const revPensions = st.pensionA + st.pensionB;
+    const revGouv = st.rrq + st.psv;
+    const revTravail = sA + sB;
+    const revBrut = revTravail + revPensions + revGouv + st.revLoc;
+
+    // --- Impôts ---
+    const revImposable = enRetraite
+      ? revPensions + revGouv + st.revLoc + ferrA + ferrB
+      : revTravail;
+    const impots = calculerImpots(revImposable, ageA, ageB, revPensions, couple, annee);
+    const revNet = Math.max(0, revBrut - impots.total);
+
+    let retrait = 0, surplus = 0;
+
+    if (enAccumulation) {
+      // --- Phase accumulation pure ---
+      const epA = (epargneAnnuelleA || 0) * Math.pow(1 + (augmentationSalaire || 0), annee - anneeCalc);
+      const epB = (epargneAnnuelleB || 0) * Math.pow(1 + (augmentationSalaire || 0), annee - anneeCalc);
+      const rA = epA * (pctReerA || 0.18);
+      const rB = epB * (pctReerB || 0.05);
+      const cA = Math.min(epA - rA, st.droitsCeliA);
+      const cB = Math.min(epB - rB, st.droitsCeliB);
+      st.reerA += rA; st.reerB += rB;
+      st.celiA += cA; st.celiB += cB;
+      st.nonEnreg += Math.max(0, epA - rA - cA) + Math.max(0, epB - rB - cB);
+      st.droitsCeliA = Math.max(0, st.droitsCeliA - cA + FISCAL_2026.celi.plafond);
+      st.droitsCeliB = Math.max(0, st.droitsCeliB - cB + FISCAL_2026.celi.plafond);
+    } else if (enRetraite) {
+      // --- Phase décaissement (au moins un retraité) ---
+      // Continuer à épargner pour le conjoint encore en activité
+      if (!enRetraiteA && epargneAnnuelleA > 0) {
+        const epA = (epargneAnnuelleA || 0) * Math.pow(1 + (augmentationSalaire || 0), annee - anneeCalc);
+        const rA = epA * (pctReerA || 0.18);
+        const cA = Math.min(epA - rA, st.droitsCeliA);
+        st.reerA += rA; st.celiA += cA;
+        st.droitsCeliA = Math.max(0, st.droitsCeliA - cA + FISCAL_2026.celi.plafond);
+      }
+      if (couple && !enRetraiteB && epargneAnnuelleB > 0) {
+        const epB = (epargneAnnuelleB || 0) * Math.pow(1 + (augmentationSalaire || 0), annee - anneeCalc);
+        const rB = epB * (pctReerB || 0.05);
+        const cB = Math.min(epB - rB, st.droitsCeliB);
+        st.reerB += rB; st.celiB += cB;
+        st.droitsCeliB = Math.max(0, st.droitsCeliB - cB + FISCAL_2026.celi.plafond);
+      }
+
+      const besoin = Math.max(0, depenses - revNet);
+      if (besoin > 0) {
+        retrait = besoin;
+        let reste = besoin;
+
+        // Retrait FERR obligatoire d'abord (déjà soustrait ci-dessous via rendement)
+        // Puis décaissement selon stratégie
+        if (strategieDecaissement === 'celi_first') {
+          // CELI d'abord, puis REER
+          const totCeli = st.celiA + st.celiB;
+          if (totCeli > 0) {
+            const dc = Math.min(reste, totCeli);
+            const pA = st.celiA / totCeli;
+            st.celiA = Math.max(0, st.celiA - dc * pA);
+            st.celiB = Math.max(0, st.celiB - dc * (1 - pA));
+            reste -= dc;
+          }
+          if (reste > 0) {
+            const totReer = st.reerA + st.reerB;
+            if (totReer > 0) {
+              const dr = Math.min(reste, totReer);
+              const pA = st.reerA / totReer;
+              st.reerA = Math.max(0, st.reerA - dr * pA);
+              st.reerB = Math.max(0, st.reerB - dr * (1 - pA));
+              reste -= dr;
+            }
+          }
+        } else {
+          // REER d'abord (défaut), puis CELI
+          const totReer = st.reerA + st.reerB;
+          if (totReer > 0) {
+            const dr = Math.min(reste, totReer);
+            const pA = st.reerA / totReer;
+            st.reerA = Math.max(0, st.reerA - dr * pA);
+            st.reerB = Math.max(0, st.reerB - dr * (1 - pA));
+            reste -= dr;
+          }
+          if (reste > 0) {
+            const totCeli = st.celiA + st.celiB;
+            if (totCeli > 0) {
+              const dc = Math.min(reste, totCeli);
+              const pA = st.celiA / totCeli;
+              st.celiA = Math.max(0, st.celiA - dc * pA);
+              st.celiB = Math.max(0, st.celiB - dc * (1 - pA));
+              reste -= dc;
+            }
+          }
+          if (reste > 0) {
+            st.nonEnreg = Math.max(0, st.nonEnreg - reste);
+          }
+        }
+      } else {
+        surplus = -besoin;
+      }
+
+      // FERR obligatoire (retrait minimum indépendant du besoin)
+      st.reerA = Math.max(0, st.reerA - ferrA);
+      st.reerB = Math.max(0, st.reerB - ferrB);
+    }
+
+    // --- Rendement sur capital restant ---
+    st.reerA = Math.max(0, st.reerA) * (1 + rendement);
+    st.reerB = Math.max(0, st.reerB) * (1 + rendement);
+    st.celiA = Math.max(0, st.celiA) * (1 + rendement);
+    st.celiB = Math.max(0, st.celiB) * (1 + rendement);
+    st.nonEnreg = Math.max(0, st.nonEnreg) * (1 + rendement);
+
+    const capitalFin = Math.max(0, st.reerA + st.reerB + st.celiA + st.celiB + st.nonEnreg);
+
+    if (capitalFin <= 100 && !capitalEpuise && enRetraite && retrait > 0) {
+      capitalEpuise = { annee, ageA, ageB: ageB || null };
+    }
+
+    lignes.push({
+      annee, ageA, ageB: ageB || '-',
+      capitalDebut,
+      pensionA: st.pensionA, pensionB: st.pensionB,
+      rrq: st.rrq, psv: st.psv,
+      location: st.revLoc,
+      travail: revTravail,
+      revBrut, impots: impots.total, revNet,
+      depenses: enRetraite ? depenses : 0,
+      surplus: enRetraite ? surplus : 0,
+      retrait,
+      ferr: ferrA + ferrB,
+      reerA: Math.max(0, st.reerA),
+      reerB: Math.max(0, st.reerB),
+      celiA: Math.max(0, st.celiA),
+      celiB: Math.max(0, st.celiB),
+      nonEnreg: Math.max(0, st.nonEnreg),
+      capitalFin,
+      enRetraite,
+    });
+  }
+  return { lignes, capitalEpuise };
+}
+
+// ============================================================
+// STATE MANAGEMENT
+// ============================================================
+let APP = {
+  phase: 'gogo',
+  budget: { gogo: [], slowgo: [], nogo: [] },
+  inputs: {
+    anneeCalc: 2026,
+    prenomA: 'Félix', anneeNaissanceA: 1981, anneeRetraiteA: 2027,
+    reerA_solde: 350000, celiA_solde: 80000, droitsReerA: 50000, droitsCeliA: 15000,
+    epargneAnnuelleA: 30000, pctReerA: 0.18, salaireBrutA: 160000,
+    pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
+      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2027,
+      ageRetraite: 46, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+      indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
+      ageDebutDecaissement: 65 },
+    rrqA: { revenusCotisesMoyens: 80000, ageDemandeRRQ: 65 },
+    psvA: { ageDemande: 65 },
+    prenomB: 'MJ', anneeNaissanceB: 1984, anneeRetraiteB: 2034,
+    reerB_solde: 120000, celiB_solde: 60000, droitsReerB: 30000, droitsCeliB: 10000,
+    epargneAnnuelleB: 20000, pctReerB: 0.05, salaireBrutB: 110000,
+    pensionB: { active: true, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
+      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2034,
+      ageRetraite: 50, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+      indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
+      ageDebutDecaissement: 65 },
+    rrqB: { revenusCotisesMoyens: 60000, ageDemandeRRQ: 65 },
+    psvB: { ageDemande: 65 },
+    nonEnregistreA_solde: 25000,
+    nonEnregistreB_solde: 25000,
+    reee_solde: 0,
+    reee_etudes: 0,
+    revenuLocation: 0, indexationLocation: 0.02,
+    inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
+    augmentationSalaire: 0,
+    strategieDecaissement: 'reer_first',
+  },
+  resultats: null,
+  scenarios: [],
+  chartCapital: null,
+  chartSources: null,
+};
+
+const DEFAULT_BUDGET = [
+  { cat: 'Habitation', items: [
+    { nom: 'Hypothèque / voiture (moyenne)', mensuel: 727 },
+    { nom: 'Assurance habitation', mensuel: 125 },
+    { nom: 'Taxes municipales/scolaires', mensuel: 350 },
+    { nom: 'Mobilier, déco & rénos', mensuel: 200 },
+  ]},
+  { cat: 'Alimentation', items: [
+    { nom: 'Épicerie', mensuel: 1000 },
+    { nom: 'Bière & SAQ', mensuel: 125 },
+    { nom: 'Restaurants', mensuel: 300 },
+  ]},
+  { cat: 'Transport', items: [
+    { nom: 'Essence', mensuel: 350 },
+    { nom: 'Entretien', mensuel: 80 },
+    { nom: 'Assurances auto', mensuel: 100 },
+  ]},
+  { cat: 'Factures', items: [
+    { nom: 'Bell (télé/internet)', mensuel: 200 },
+    { nom: 'Hydro-Québec', mensuel: 150 },
+    { nom: 'Streaming', mensuel: 28 },
+  ]},
+  { cat: 'Shopping', items: [
+    { nom: 'Coiffeur & soins', mensuel: 100 },
+    { nom: 'Amazon / maison', mensuel: 200 },
+  ]},
+  { cat: 'Loisirs', items: [
+    { nom: 'Sports été', mensuel: 400 },
+    { nom: 'Ski', mensuel: 400 },
+  ]},
+  { cat: 'Santé', items: [
+    { nom: 'Médicaments', mensuel: 50 },
+    { nom: 'Dentiste', mensuel: 100 },
+    { nom: 'Assurance médicale privée', mensuel: 400 },
+    { nom: 'Optométriste / lunettes', mensuel: 100 },
+  ]},
+  { cat: 'Voyages', items: [
+    { nom: 'Voyage été', mensuel: 400 },
+    { nom: 'Voyage hiver', mensuel: 400 },
+  ]},
+  { cat: 'Autres', items: [
+    { nom: 'Fond de prévoyance', mensuel: 500 },
+  ]},
+];
+
+// ============================================================
+// INIT & STORAGE
+// ============================================================
+function confirmerReset() {
+  if (confirm('⚠️ Êtes-vous sûr de vouloir tout effacer?\n\nToutes vos données (budget, épargne, pensions, scénarios) seront supprimées définitivement.')) {
+    ['retraite_v2_budget','retraite_v2_inputs','retraite_v2_scenarios','retraite_v2_updated'].forEach(k => localStorage.removeItem(k));
+    APP.budget = { gogo: [], slowgo: [], nogo: [] };
+    APP.scenarios = [];
+    APP.resultats = null;
+    // Reset inputs to defaults
+    APP.inputs = {
+      anneeCalc: 2026,
+      prenomA: 'Conjoint A', anneeNaissanceA: 1981, anneeRetraiteA: 2027,
+      reerA_solde: 0, celiA_solde: 0, droitsReerA: 0, droitsCeliA: 0,
+      epargneAnnuelleA: 0, pctReerA: 0.18, salaireBrutA: 0,
+      pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
+        anneesServiceActuel: 0, salaire: 0, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+        indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false, ageDebutDecaissement: 65 },
+      rrqA: { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 },
+      psvA: { ageDemande: 65 },
+      prenomB: 'Conjoint B', anneeNaissanceB: 1984, anneeRetraiteB: 2030,
+      reerB_solde: 0, celiB_solde: 0, droitsReerB: 0, droitsCeliB: 0,
+      epargneAnnuelleB: 0, pctReerB: 0.05, salaireBrutB: 0,
+      pensionB: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
+        anneesServiceActuel: 0, salaire: 0, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+        indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false, ageDebutDecaissement: 65 },
+      rrqB: { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 },
+      psvB: { ageDemande: 65 },
+      nonEnregistreA_solde: 0, nonEnregistreB_solde: 0,
+      reee_solde: 0, reee_etudes: 0,
+      revenuLocation: 0, indexationLocation: 0.02,
+      inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
+      augmentationSalaire: 0, strategieDecaissement: 'reer_first',
+      budgetRetraite: 0, budgetSlowgo: 0, budgetNogo: 0,
+    };
+    reinitialiserBudget();
+    renderBudget();
+    showDonneesTab('profil');
+    renderScenariosList();
+    const el = document.getElementById('nav-brand');
+    if (el) el.innerHTML = 'Retraite <span>&nbsp;Conjoint A & Conjoint B</span>';
+    alert('Données effacées. Vous pouvez recommencer.');
+  }
+}
+
+function saveData() {
+  localStorage.setItem('retraite_v2_budget', JSON.stringify(APP.budget));
+  localStorage.setItem('retraite_v2_inputs', JSON.stringify(APP.inputs));
+  localStorage.setItem('retraite_v2_scenarios', JSON.stringify(APP.scenarios));
+  localStorage.setItem('retraite_v2_updated', new Date().toISOString());
+  updateLastUpdate();
+}
+
+function loadData() {
+  const b = localStorage.getItem('retraite_v2_budget');
+  const i = localStorage.getItem('retraite_v2_inputs');
+  const s = localStorage.getItem('retraite_v2_scenarios');
+  if (b) APP.budget = JSON.parse(b);
+  else reinitialiserBudget(false);
+  if (i) {
+    const saved = JSON.parse(i);
+    APP.inputs = { ...APP.inputs, ...saved };
+    // Migration: if old nonEnregistre_solde exists but new split fields are 0,
+    // distribute the old value equally between A and B
+    if (saved.nonEnregistre_solde && !saved.nonEnregistreA_solde && !saved.nonEnregistreB_solde) {
+      APP.inputs.nonEnregistreA_solde = saved.nonEnregistre_solde;
+      APP.inputs.nonEnregistreB_solde = 0;
+    }
+    // Always keep nonEnregistre_solde in sync for backwards compat
+    APP.inputs.nonEnregistre_solde = (APP.inputs.nonEnregistreA_solde||0) + (APP.inputs.nonEnregistreB_solde||0);
+  }
+  if (s) APP.scenarios = JSON.parse(s);
+  updateLastUpdate();
+}
+
+function updateLastUpdate() {
+  const d = localStorage.getItem('retraite_v2_updated');
+  if (d) {
+    const dt = new Date(d);
+    document.getElementById('lastUpdate').textContent =
+      dt.toLocaleDateString('fr-CA', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
+}
+
+function exportData() {
+  const data = { budget: APP.budget, inputs: APP.inputs, scenarios: APP.scenarios };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `retraite_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.budget) APP.budget = data.budget;
+      if (data.inputs) APP.inputs = { ...APP.inputs, ...data.inputs };
+      if (data.scenarios) APP.scenarios = data.scenarios;
+      saveData();
+      renderBudget();
+      showDonneesTab('profil');
+      recalculerTout();
+      alert('Import réussi!');
+    } catch { alert('Erreur lors de l\'import'); }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  if (event && event.target) event.target.classList.add('active');
+  // Update mobile bottom nav
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  const mbn = document.getElementById('mbn-' + id);
+  if (mbn) mbn.classList.add('active');
+  if (id === 'resultats') {
+    if (!APP.resultats) recalculerTout();
+    setTimeout(function() { requestAnimationFrame(renderResultats); }, 50);
+  }
+  if (id === 'details') {
+    if (!APP.resultats) recalculerTout();
+    setTimeout(renderDetails, 50);
+  }
+}
+
+function showDonneesTab(tab, el) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Sync mobile tabs
+  document.querySelectorAll('.donnees-tab-btn').forEach(b => b.classList.remove('active'));
+  renderDonneesTab(tab);
+}
+
+function showDonneesTabMobile(tab, el) {
+  // Update mobile tab buttons
+  document.querySelectorAll('.donnees-tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Update sidebar items
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  // Scroll the active tab into view
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  renderDonneesTab(tab);
+}
+
+// ============================================================
+// SECTION BUDGET
+// ============================================================
+function reinitialiserBudget(save=true) {
+  APP.budget = {
+    gogo: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
+    slowgo: JSON.parse(JSON.stringify(DEFAULT_BUDGET)).map(cat => ({
+      ...cat, items: cat.items.map(item => {
+        let m = item.mensuel;
+        if (cat.cat === 'Loisirs') m = Math.round(m * 0.6);
+        if (cat.cat === 'Voyages') m = Math.round(m * 0.7);
+        if (cat.cat === 'Santé') m = Math.round(m * 1.3);
+        return { ...item, mensuel: m };
+      })
+    })),
+    nogo: JSON.parse(JSON.stringify(DEFAULT_BUDGET)).map(cat => ({
+      ...cat, items: cat.items.map(item => {
+        let m = item.mensuel;
+        if (cat.cat === 'Loisirs') m = Math.round(m * 0.2);
+        if (cat.cat === 'Voyages') m = Math.round(m * 0.3);
+        if (cat.cat === 'Santé') m = Math.round(m * 1.6);
+        if (cat.cat === 'Transport') m = Math.round(m * 0.6);
+        return { ...item, mensuel: m };
+      })
+    }))
+  };
+  if (save) { saveData(); renderBudget(); }
+}
+
+function setPhase(phase, sidebarEl, tabEl, fromPinned) {
+  APP.phase = phase;
+  // Update all phase-tab buttons (both inline and pinned)
+  document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
+  if (sidebarEl) sidebarEl.classList.add('active');
+  if (tabEl) tabEl.classList.add('active');
+  // Sync pinned bar
+  const pinnedBtn = document.getElementById('ppb-' + phase);
+  if (pinnedBtn) pinnedBtn.classList.add('active');
+  // Sync sidebar
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  const labels = { gogo: 'Phase Go-Go (55–70 ans)', slowgo: 'Phase Slow-Go (70–80 ans)', nogo: 'Phase No-Go (80+ ans)' };
+  const lbl = document.getElementById('phase-label');
+  if (lbl) lbl.textContent = labels[phase];
+  renderBudget();
+}
+
+function renderBudget() {
+  const cats = APP.budget[APP.phase] || [];
+  const container = document.getElementById('budget-categories');
+  container.innerHTML = '';
+  let totalM = 0, totalA = 0;
+
+  cats.forEach((cat, catIdx) => {
+    const catDiv = document.createElement('div');
+    catDiv.style.marginBottom = '12px';
+    catDiv.innerHTML = `<div class="budget-cat-header">${cat.cat}</div>`;
+
+    cat.items.forEach((item, itemIdx) => {
+      const annuel = (parseFloat(item.mensuel) || 0) * 12;
+      totalM += parseFloat(item.mensuel) || 0;
+      totalA += annuel;
+      const row = document.createElement('div');
+      row.className = 'budget-row';
+      const nomId = `bnom-${catIdx}-${itemIdx}`;
+      const mId = `bm-${catIdx}-${itemIdx}`;
+      const cId = `bc-${catIdx}-${itemIdx}`;
+      row.innerHTML = `
+        <input id="${nomId}" type="text" class="budget-input" style="text-align:left;" value="${item.nom.replace(/"/g,'&quot;')}"
+          oninput="updateBudgetNom(${catIdx},${itemIdx},this.value)" placeholder="Poste">
+        <input id="${mId}" type="number" class="budget-input" value="${item.mensuel}"
+          oninput="updateBudgetMensuel(${catIdx},${itemIdx},this.value,'${cId}')" placeholder="0"
+          onblur="saveData()">
+        <div id="${cId}" class="budget-computed">${fmt(annuel)}</div>
+        <button class="del-btn" onclick="supprimerLigne(${catIdx},${itemIdx})">×</button>
+      `;
+      catDiv.appendChild(row);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-row-btn';
+    addBtn.textContent = `+ Ajouter un poste à "${cat.cat}"`;
+    addBtn.onclick = () => ajouterLigne(catIdx);
+    catDiv.appendChild(addBtn);
+    container.appendChild(catDiv);
+  });
+
+  document.getElementById('total-mensuel-display').textContent = fmt(totalM);
+  document.getElementById('total-annuel-display').textContent = fmt(totalA);
+  document.getElementById('sidebar-total').textContent = fmt(totalA);
+  document.getElementById('sidebar-mensuel').textContent = fmt(totalM);
+
+  // Sync budget retraite dans inputs
+  APP.inputs.budgetRetraite = totalA;
+}
+
+function updateBudgetNom(catIdx, itemIdx, val) {
+  APP.budget[APP.phase][catIdx].items[itemIdx].nom = val;
+  saveData();
+  // Pas de re-render — le champ garde le focus
+}
+
+function updateBudgetMensuel(catIdx, itemIdx, val, computedId) {
+  const v = parseFloat(val) || 0;
+  APP.budget[APP.phase][catIdx].items[itemIdx].mensuel = v;
+  // Mise à jour visuelle instantanée — sans toucher au DOM global
+  const annuel = v * 12;
+  if (computedId) {
+    const el = document.getElementById(computedId);
+    if (el) el.textContent = fmt(annuel);
+  }
+  // Recalculer les totaux seulement
+  let totalM = 0, totalA = 0;
+  const cats = APP.budget[APP.phase];
+  cats.forEach(function(cat) { cat.items.forEach(function(item) {
+    totalM += parseFloat(item.mensuel) || 0;
+    totalA += (parseFloat(item.mensuel) || 0) * 12;
+  }); });
+  document.getElementById('total-mensuel-display').textContent = fmt(totalM);
+  document.getElementById('total-annuel-display').textContent = fmt(totalA);
+  document.getElementById('sidebar-total').textContent = fmt(totalA);
+  document.getElementById('sidebar-mensuel').textContent = fmt(totalM);
+  APP.inputs.budgetRetraite = totalA;
+  // Sauvegarde différée pour ne pas bloquer la frappe
+  clearTimeout(window._budgetSaveTimer);
+  window._budgetSaveTimer = setTimeout(saveData, 800);
+}
+
+function ajouterLigne(catIdx) {
+  APP.budget[APP.phase][catIdx].items.push({ nom: 'Nouveau poste', mensuel: 0 });
+  saveData(); renderBudget();
+}
+
+function supprimerLigne(catIdx, itemIdx) {
+  APP.budget[APP.phase][catIdx].items.splice(itemIdx, 1);
+  saveData(); renderBudget();
+}
+
+function ajouterCategorie() {
+  const nom = prompt('Nom de la nouvelle catégorie:');
+  if (nom) {
+    ['gogo','slowgo','nogo'].forEach(p => {
+      APP.budget[p].push({ cat: nom, items: [{ nom: 'Poste 1', mensuel: 0 }] });
+    });
+    saveData(); renderBudget();
+  }
+}
+
+function updateHypo() {
+  const paiement = parseFloat(document.getElementById('hypo-paiement').value) || 0;
+  const fin = parseInt(document.getElementById('hypo-fin').value) || 2037;
+  const auto = parseFloat(document.getElementById('auto-mensuel').value) || 0;
+  const anneesAvecHypo = Math.max(0, fin - 2026);
+  const anneesTotal = 40;
+  const moyenne = (paiement * anneesAvecHypo + auto * (anneesTotal - anneesAvecHypo)) / anneesTotal;
+  document.getElementById('hypo-moyenne').textContent = fmt(moyenne) + '/mois';
+  // Mettre à jour le premier item habitation
+  if (APP.budget[APP.phase]?.[0]?.items?.[0]) {
+    APP.budget[APP.phase][0].items[0].mensuel = Math.round(moyenne);
+    saveData(); renderBudget();
+  }
+}
+
+// ============================================================
+// SECTION DONNÉES D'ENTRÉE
+// ============================================================
+function renderDonneesTab(tab) {
+  const c = document.getElementById('donnees-content');
+  const inp = APP.inputs;
+  const anneeCalc = 2026;
+
+  switch(tab) {
+    case 'profil':
+      c.innerHTML = `
+        <div class="page-title" style="margin-bottom:20px;">Profil du couple</div>
+        <div class="grid grid-2" style="gap:20px;">
+          <div class="card">
+            <div class="card-title"><div class="dot" style="background:var(--blue)"></div>Conjoint A</div>
+            <div class="grid" style="gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Prénom</label>
+                <input type="text" class="form-input" value="${inp.prenomA}"
+                  oninput="setInp('prenomA',this.value)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Année de naissance</label>
+                <input type="number" class="form-input" value="${inp.anneeNaissanceA}"
+                  oninput="setInp('anneeNaissanceA',parseInt(this.value))">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Âge actuel</label>
+                <div class="form-computed">${anneeCalc - inp.anneeNaissanceA} ans</div>
+              </div>
+              <hr class="divider">
+              <div class="sep">Scénario retraite — ${inp.prenomA}</div>
+              <div class="scenario-btns">
+                ${[1,3,5].map(n => `<button class="scenario-btn ${inp.anneeRetraiteA === anneeCalc+n?'active':''}"
+                  onclick="setScenarioRetraite('A',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
+              </div>
+              <div class="form-group">
+                <label class="form-label">Année de retraite (valeur exacte)</label>
+                <input type="number" class="form-input" value="${inp.anneeRetraiteA}"
+                  oninput="setInp('anneeRetraiteA',parseInt(this.value)); renderDonneesTab('profil')">
+                <div class="form-hint">Dans ${inp.anneeRetraiteA - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceA + (inp.anneeRetraiteA - anneeCalc)} ans</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="dot" style="background:var(--pink)"></div>Conjoint B</div>
+            <div class="grid" style="gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Prénom</label>
+                <input type="text" class="form-input" value="${inp.prenomB}"
+                  oninput="setInp('prenomB',this.value)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Année de naissance</label>
+                <input type="number" class="form-input" value="${inp.anneeNaissanceB}"
+                  oninput="setInp('anneeNaissanceB',parseInt(this.value))">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Âge actuel</label>
+                <div class="form-computed">${anneeCalc - inp.anneeNaissanceB} ans</div>
+              </div>
+              <hr class="divider">
+              <div class="sep">Scénario retraite — ${inp.prenomB}</div>
+              <div class="scenario-btns">
+                ${[1,3,5].map(n => `<button class="scenario-btn ${inp.anneeRetraiteB === anneeCalc+n?'active':''}"
+                  onclick="setScenarioRetraite('B',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
+              </div>
+              <div class="form-group">
+                <label class="form-label">Année de retraite (valeur exacte)</label>
+                <input type="number" class="form-input" value="${inp.anneeRetraiteB}"
+                  oninput="setInp('anneeRetraiteB',parseInt(this.value)); renderDonneesTab('profil')">
+                <div class="form-hint">Dans ${inp.anneeRetraiteB - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceB + (inp.anneeRetraiteB - anneeCalc)} ans</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title"><div class="dot"></div>Revenu & stratégie</div>
+          <div class="grid grid-3" style="gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Stratégie décaissement</label>
+              <select class="form-select" onchange="setInp('strategieDecaissement',this.value)">
+                <option value="reer_first" ${inp.strategieDecaissement==='reer_first'?'selected':''}>REER en premier (optimisation impôt)</option>
+                <option value="5050" ${inp.strategieDecaissement==='5050'?'selected':''}>50/50 REER & CELI</option>
+                <option value="celi_first" ${inp.strategieDecaissement==='celi_first'?'selected':''}>CELI en premier</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Revenu location (actuel, $/an)</label>
+              <input type="number" class="form-input" value="${inp.revenuLocation}"
+                oninput="setInp('revenuLocation',parseFloat(this.value)||0)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Indexation location (%/an)</label>
+              <input type="number" class="form-input" step="0.01" value="${(inp.indexationLocation*100).toFixed(1)}"
+                oninput="setInp('indexationLocation',parseFloat(this.value)/100||0.02)">
+            </div>
+          </div>
+        </div>`;
+      break;
+
+    case 'epargne':
+      c.innerHTML = `
+        <div class="page-title" style="margin-bottom:8px;">Épargne</div>
+        <div class="update-banner">
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--gold);">📅 Mise à jour rapide du mois</div>
+            <div class="update-date">Mettez à jour vos soldes mensuellement</div>
+          </div>
+        </div>
+        <div class="grid grid-2" style="gap:20px;">
+          <div class="card">
+            <div class="card-title"><div class="dot" style="background:var(--blue)"></div>${inp.prenomA}</div>
+            <div class="grid" style="gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Salaire brut annuel ($)</label>
+                <input type="number" class="form-input" value="${inp.salaireBrutA}"
+                  oninput="setInp('salaireBrutA',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solde REER ($)</label>
+                <input type="number" class="form-input" value="${inp.reerA_solde}"
+                  oninput="setInp('reerA_solde',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solde CELI ($)</label>
+                <input type="number" class="form-input" value="${inp.celiA_solde}"
+                  oninput="setInp('celiA_solde',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Droits REER inutilisés ($)</label>
+                <input type="number" class="form-input" value="${inp.droitsReerA}"
+                  oninput="setInp('droitsReerA',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Droits CELI inutilisés ($)</label>
+                <input type="number" class="form-input" value="${inp.droitsCeliA}"
+                  oninput="setInp('droitsCeliA',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Épargne annuelle prévue ($)</label>
+                <input type="number" class="form-input" value="${inp.epargneAnnuelleA}"
+                  oninput="setInp('epargneAnnuelleA',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">% en REER (du total épargne)</label>
+                <input type="number" class="form-input" step="1" value="${Math.round(inp.pctReerA*100)}"
+                  oninput="setInp('pctReerA',parseFloat(this.value)/100||0.18)">
+                <div class="form-hint">REER: ${fmt(inp.epargneAnnuelleA*inp.pctReerA)} | CELI: ${fmt(inp.epargneAnnuelleA*(1-inp.pctReerA))}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><div class="dot" style="background:var(--pink)"></div>${inp.prenomB}</div>
+            <div class="grid" style="gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Salaire brut annuel ($)</label>
+                <input type="number" class="form-input" value="${inp.salaireBrutB}"
+                  oninput="setInp('salaireBrutB',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solde REER ($)</label>
+                <input type="number" class="form-input" value="${inp.reerB_solde}"
+                  oninput="setInp('reerB_solde',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solde CELI ($)</label>
+                <input type="number" class="form-input" value="${inp.celiB_solde}"
+                  oninput="setInp('celiB_solde',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Droits REER inutilisés ($)</label>
+                <input type="number" class="form-input" value="${inp.droitsReerB}"
+                  oninput="setInp('droitsReerB',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Droits CELI inutilisés ($)</label>
+                <input type="number" class="form-input" value="${inp.droitsCeliB}"
+                  oninput="setInp('droitsCeliB',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Épargne annuelle prévue ($)</label>
+                <input type="number" class="form-input" value="${inp.epargneAnnuelleB}"
+                  oninput="setInp('epargneAnnuelleB',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">% en REER (du total épargne)</label>
+                <input type="number" class="form-input" step="1" value="${Math.round(inp.pctReerB*100)}"
+                  oninput="setInp('pctReerB',parseFloat(this.value)/100||0.05)">
+                <div class="form-hint">REER: ${fmt(inp.epargneAnnuelleB*inp.pctReerB)} | CELI: ${fmt(inp.epargneAnnuelleB*(1-inp.pctReerB))}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title"><div class="dot"></div>Non enregistré & placements</div>
+          <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label">Solde non enregistré — ${inp.prenomA} ($)</label>
+              <input type="number" class="form-input" value="${inp.nonEnregistreA_solde||0}"
+                oninput="setInp('nonEnregistreA_solde',parseFloat(this.value)||0)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Solde non enregistré — ${inp.prenomB} ($)</label>
+              <input type="number" class="form-input" value="${inp.nonEnregistreB_solde||0}"
+                oninput="setInp('nonEnregistreB_solde',parseFloat(this.value)||0)">
+            </div>
+          </div>
+          <div class="card" style="background:var(--bg3); border-color:rgba(201,168,76,0.2);">
+            <div class="card-title" style="font-size:13px; margin-bottom:12px;"><div class="dot" style="background:var(--amber)"></div>REEE — Épargne-études</div>
+            <div class="grid grid-3" style="gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Solde REEE total ($)</label>
+                <input type="number" class="form-input" value="${inp.reee_solde||0}"
+                  oninput="setInp('reee_solde',parseFloat(this.value)||0)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Montant prévu pour les études ($)</label>
+                <input type="number" class="form-input" value="${inp.reee_etudes||0}"
+                  oninput="setInp('reee_etudes',parseFloat(this.value)||0)">
+                <div class="form-hint">Sera décaissé avant la retraite</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Solde résiduel → non enregistré</label>
+                <div class="form-computed">${fmt((inp.reee_solde||0) - (inp.reee_etudes||0))} transféré au non enregistré</div>
+                <div class="form-hint">Excédent ajouté au solde non enregistré</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      break;
+
+    case 'pension-a':
+    case 'pension-b':
+      const isA = tab === 'pension-a';
+      const prenom = isA ? inp.prenomA : inp.prenomB;
+      const pd = isA ? inp.pensionA : inp.pensionB;
+      const key = isA ? 'pensionA' : 'pensionB';
+      const anneeNaiss = isA ? inp.anneeNaissanceA : inp.anneeNaissanceB;
+      const anneeRet = isA ? inp.anneeRetraiteA : inp.anneeRetraiteB;
+      const ageRet = anneeRet - anneeNaiss;
+      let renteCalc = null;
+      if (pd.active) {
+        renteCalc = calculerPensionPD({
+          typeRegime: pd.typeRegime,
+          tauxAccumulation: pd.tauxAccumulation,
+          anneesServiceActuel: pd.anneesServiceActuel,
+          salaire: pd.salaire,
+          anneeRetraite: anneeRet,
+          ageRetraite: ageRet,
+          ageSansPenalite: pd.ageSansPenalite,
+          tauxReductionAnnuel: pd.tauxReductionAnnuel,
+          indexationReport: pd.indexationReport,
+          indexationRente: pd.indexationRente,
+          coordRRQ: pd.coordRRQ,
+          ageDebutDecaissement: pd.ageDebutDecaissement,
+        });
+      }
+
+      c.innerHTML = `
+        <div class="page-title" style="margin-bottom:20px;">Pension — ${prenom}</div>
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:${isA?'var(--blue)':'var(--pink)'}"></div>Régime de retraite</div>
+          <div class="toggle-group" style="margin-bottom:20px;">
+            <div class="toggle ${pd.active?'on':''}" onclick="togglePension('${key}',this)"></div>
+            <span style="font-size:13px; color:var(--text2);">${pd.active ? 'Actif' : 'Inactif (aucun régime PD)'}</span>
+          </div>
+          ${pd.active ? `
+          <div class="grid grid-2" style="gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Type de régime</label>
+              <select class="form-select" onchange="setPension('${key}','typeRegime',this.value)">
+                <option value="pd_prive" ${pd.typeRegime==='pd_prive'?'selected':''}>Privé PD (prestations déterminées)</option>
+                <option value="rregop" ${pd.typeRegime==='rregop'?'selected':''}>RREGOP (public)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Taux d'accumulation (%/an)</label>
+              <input type="number" class="form-input" step="0.1" value="${(pd.tauxAccumulation*100).toFixed(1)}"
+                oninput="setPension('${key}','tauxAccumulation',parseFloat(this.value)/100)">
+              <div class="form-hint">RREGOP: 2% | Privé typique: 1% à 2%</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Années de service à ce jour</label>
+              <input type="number" class="form-input" value="${pd.anneesServiceActuel}"
+                oninput="setPension('${key}','anneesServiceActuel',parseFloat(this.value)||0)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Salaire annuel de base ($)</label>
+              <input type="number" class="form-input" value="${pd.salaire}"
+                oninput="setPension('${key}','salaire',parseFloat(this.value)||0)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Âge sans pénalité</label>
+              <input type="number" class="form-input" value="${pd.ageSansPenalite}"
+                oninput="setPension('${key}','ageSansPenalite',parseInt(this.value)||61)">
+              <div class="form-hint">RREGOP: 61 ans, ou facteur 90, ou 35 ans service</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Réduction par an d'anticipation (%)</label>
+              <input type="number" class="form-input" step="0.5" value="${(pd.tauxReductionAnnuel*100).toFixed(1)}"
+                oninput="setPension('${key}','tauxReductionAnnuel',parseFloat(this.value)/100)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Indexation pendant le report (rente différée, %)</label>
+              <input type="number" class="form-input" step="0.1" value="${(pd.indexationReport*100).toFixed(1)}"
+                oninput="setPension('${key}','indexationReport',parseFloat(this.value)/100)">
+              <div class="form-hint">S'applique si arrêt avant 55 ans et rente différée</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Indexation après versement (%/an)</label>
+              <input type="number" class="form-input" step="0.1" value="${(pd.indexationRente*100).toFixed(1)}"
+                oninput="setPension('${key}','indexationRente',parseFloat(this.value)/100)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Âge début décaissement</label>
+              <input type="number" class="form-input" value="${pd.ageDebutDecaissement}"
+                oninput="setPension('${key}','ageDebutDecaissement',parseInt(this.value)||65)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Coordination RRQ à 65 ans</label>
+              <select class="form-select" onchange="setPension('${key}','coordRRQ',this.value==='true')">
+                <option value="false" ${!pd.coordRRQ?'selected':''}>Non</option>
+                <option value="true" ${pd.coordRRQ?'selected':''}>Oui (RREGOP et certains PD)</option>
+              </select>
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="sep">Résultats calculés</div>
+          <div class="grid grid-4" style="gap:12px;">
+            <div class="stat-card stat-gold">
+              <div class="stat-label">Rente de base</div>
+              <div class="stat-value" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteBase) : '—'}</div>
+              <div class="stat-sub">${renteCalc ? `${renteCalc.tauxAccumulation*100||pd.tauxAccumulation*100}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × salaire` : ''}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Réduction</div>
+              <div class="stat-value" style="font-size:18px; color:${renteCalc?.reduction>0?'var(--coral)':'var(--green)'};">
+                ${renteCalc ? (renteCalc.reduction > 0 ? `-${(renteCalc.reduction*100).toFixed(0)}%` : 'Aucune') : '—'}
+              </div>
+              <div class="stat-sub">${ageRet} ans vs ${pd.ageSansPenalite} ans sans pénalité</div>
+            </div>
+            <div class="stat-card stat-green">
+              <div class="stat-label">Rente au début</div>
+              <div class="stat-value" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteAuDebut) : '—'}</div>
+              <div class="stat-sub">À ${pd.ageDebutDecaissement} ans</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Coordination RRQ (65 ans)</div>
+              <div class="stat-value" style="font-size:18px; color:var(--coral);">${renteCalc ? fmt(renteCalc.coordMontant) : '—'}</div>
+              <div class="stat-sub">Réduction permanente à 65 ans</div>
+            </div>
+          </div>
+          ` : `<div class="alert alert-info">Aucun régime PD configuré pour ${prenom}. Activez si applicable.</div>`}
+        </div>`;
+      break;
+
+    case 'rrq': {
+      const rrqA = APP.inputs.rrqA;
+      const rrqB = APP.inputs.rrqB;
+      const optsA = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceA, anneeCalc: 2026, revenusCotisesMoyens: rrqA.revenusCotisesMoyens });
+      const optsB = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceB, anneeCalc: 2026, revenusCotisesMoyens: rrqB.revenusCotisesMoyens });
+      c.innerHTML = '';
+      const titleRRQ = document.createElement('div');
+      titleRRQ.className = 'page-title';
+      titleRRQ.style.marginBottom = '20px';
+      titleRRQ.textContent = 'Régime de Rentes du Québec (RRQ)';
+      c.appendChild(titleRRQ);
+      const alertRRQ = document.createElement('div');
+      alertRRQ.className = 'alert alert-info';
+      alertRRQ.style.marginBottom = '16px';
+      alertRRQ.textContent = '💡 Calcul actuariel basé sur MGA 2026 (74 600 $) et rente max 18 091,80 $/an à 65 ans. Entrez vos revenus cotisés moyens ou le montant exact de votre relevé RRQ.';
+      c.appendChild(alertRRQ);
+      const gridRRQ = document.createElement('div');
+      gridRRQ.className = 'grid grid-2';
+      gridRRQ.style.gap = '20px';
+      gridRRQ.appendChild(renderRRQCard(inp.prenomA, 'A', rrqA, optsA, inp.anneeNaissanceA));
+      gridRRQ.appendChild(renderRRQCard(inp.prenomB, 'B', rrqB, optsB, inp.anneeNaissanceB));
+      c.appendChild(gridRRQ);
+      break;
+    }
+
+    case 'psv': {
+      const psvA_65 = calculerPSV(inp.anneeNaissanceA, 2026, 65);
+      const psvA_70 = calculerPSV(inp.anneeNaissanceA, 2026, 70);
+      const psvB_65 = calculerPSV(inp.anneeNaissanceB, 2026, 65);
+      const psvB_70 = calculerPSV(inp.anneeNaissanceB, 2026, 70);
+      c.innerHTML = '';
+      const titlePSV = document.createElement('div');
+      titlePSV.className = 'page-title';
+      titlePSV.style.marginBottom = '20px';
+      titlePSV.textContent = 'Pension de Sécurité de la Vieillesse (PSV)';
+      c.appendChild(titlePSV);
+      const alertPSV = document.createElement('div');
+      alertPSV.className = 'alert alert-info';
+      alertPSV.style.marginBottom = '16px';
+      alertPSV.textContent = 'Calculé automatiquement. Montant de base 2026: 727,67 $/mois à 65 ans, +36% si reporté à 70 ans.';
+      c.appendChild(alertPSV);
+      const gridPSV = document.createElement('div');
+      gridPSV.className = 'grid grid-2';
+      gridPSV.style.gap = '20px';
+      gridPSV.appendChild(renderPSVCard(inp.prenomA, 'A', inp.psvA, psvA_65, psvA_70));
+      gridPSV.appendChild(renderPSVCard(inp.prenomB, 'B', inp.psvB, psvB_65, psvB_70));
+      c.appendChild(gridPSV);
+      break;
+    }
+
+    case 'hypotheses':
+      c.innerHTML = `
+        <div class="page-title" style="margin-bottom:20px;">Hypothèses de calcul</div>
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>Rendements & inflation</div>
+          <div class="grid grid-3" style="gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Rendement — phase accumulation (%)</label>
+              <input type="number" class="form-input" step="0.5" value="${(inp.rendementAccumulation*100).toFixed(1)}"
+                oninput="setInp('rendementAccumulation',parseFloat(this.value)/100)">
+              <div class="form-hint">Historique long terme: 6–7%</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rendement — phase retraite (%)</label>
+              <input type="number" class="form-input" step="0.5" value="${(inp.rendementRetraite*100).toFixed(1)}"
+                oninput="setInp('rendementRetraite',parseFloat(this.value)/100)">
+              <div class="form-hint">Plus conservateur: 4–5%</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Inflation annuelle (%)</label>
+              <input type="number" class="form-input" step="0.1" value="${(inp.inflation*100).toFixed(1)}"
+                oninput="setInp('inflation',parseFloat(this.value)/100)">
+              <div class="form-hint">Cible BdC: 2% | Actuel: ~2.5%</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Augmentation salaire annuelle (%)</label>
+              <input type="number" class="form-input" step="0.5" value="${(inp.augmentationSalaire*100).toFixed(1)}"
+                oninput="setInp('augmentationSalaire',parseFloat(this.value)/100)">
+            </div>
+          </div>
+        </div>`;
+      break;
+  }
+}
+
+function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
+  // Returns a DOM node (not HTML string)
+  const abl = ab.toLowerCase();
+  const overrides = rrqData.overrides || {};
+  const modeManuel = rrqData.modeManuel || false;
+  const ages = [60, 65, 70, 72];
+
+  function montantPour(age) {
+    const ov = overrides[age];
+    return (ov !== undefined && ov !== null && ov !== '') ? parseFloat(ov) : opts['rrq' + age];
+  }
+
+  // Use a container div and build children with DOM — zero inline event string issues
+  const wrap = document.createElement('div');
+  wrap.className = 'card';
+
+  // Title
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.innerHTML = '<div class="dot" style="background:' + (ab === 'A' ? 'var(--blue)' : 'var(--pink)') + '"></div>' + prenom;
+  wrap.appendChild(title);
+
+  // Revenus cotisés moyens
+  const fgRev = document.createElement('div');
+  fgRev.className = 'form-group';
+  fgRev.style.marginBottom = '16px';
+  const lblRev = document.createElement('label');
+  lblRev.className = 'form-label';
+  lblRev.textContent = 'Revenus cotisés moyens ($/an) — pour estimation auto';
+  const inpRev = document.createElement('input');
+  inpRev.type = 'number';
+  inpRev.className = 'form-input';
+  inpRev.value = rrqData.revenusCotisesMoyens;
+  inpRev.addEventListener('input', function() { setRRQ(abl, parseInt(this.value) || 0); });
+  const hintRev = document.createElement('div');
+  hintRev.className = 'form-hint';
+  hintRev.textContent = 'Utilisé pour le calcul automatique ci-dessous';
+  fgRev.appendChild(lblRev);
+  fgRev.appendChild(inpRev);
+  fgRev.appendChild(hintRev);
+  wrap.appendChild(fgRev);
+
+  // Sep
+  const sep1 = document.createElement('div');
+  sep1.className = 'sep';
+  sep1.textContent = 'Comparaison — choisir l’âge de demande';
+  wrap.appendChild(sep1);
+
+  // Age options grid
+  const grid = document.createElement('div');
+  grid.className = 'rrq-compare';
+  grid.style.marginBottom = '16px';
+  ages.forEach(function(age) {
+    const affiche = montantPour(age);
+    const selected = rrqData.ageDemandeRRQ === age;
+    const hasOv = overrides[age] !== undefined && overrides[age] !== null && overrides[age] !== '';
+    const opt = document.createElement('div');
+    opt.className = 'rrq-option' + (selected ? ' selected' : '');
+    opt.addEventListener('click', (function(a) { return function() { setRRQAge(abl, a); }; })(age));
+    const ageDiv = document.createElement('div');
+    ageDiv.className = 'rrq-option-age';
+    ageDiv.textContent = age + ' ans';
+    const montDiv = document.createElement('div');
+    montDiv.className = 'rrq-option-montant';
+    if (hasOv) montDiv.style.color = 'var(--teal)';
+    montDiv.textContent = fmt(affiche);
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'rrq-option-label';
+    lblDiv.textContent = hasOv ? '✏️ manuel' : 'calculé';
+    opt.appendChild(ageDiv);
+    opt.appendChild(montDiv);
+    opt.appendChild(lblDiv);
+    grid.appendChild(opt);
+  });
+  wrap.appendChild(grid);
+
+  // Manuel toggle bar
+  const bar = document.createElement('div');
+  bar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;';
+  const sepManuel = document.createElement('div');
+  sepManuel.className = 'sep';
+  sepManuel.style.margin = '0';
+  sepManuel.textContent = '📋 Valeurs du relevé Retraite Québec (optionnel)';
+  const btnManuel = document.createElement('button');
+  btnManuel.className = 'btn-sm';
+  btnManuel.style.fontSize = '11px';
+  btnManuel.textContent = modeManuel ? '▲ Masquer' : '▼ Entrer mes montants réels';
+  btnManuel.addEventListener('click', function() { toggleRRQManuel(abl); });
+  bar.appendChild(sepManuel);
+  bar.appendChild(btnManuel);
+  wrap.appendChild(bar);
+
+  // Override inputs (shown only in modeManuel)
+  if (modeManuel) {
+    const ovGrid = document.createElement('div');
+    ovGrid.className = 'grid grid-2';
+    ovGrid.style.cssText = 'gap:12px; margin-bottom:16px;';
+    ages.forEach(function(age) {
+      const calcule = opts['rrq' + age];
+      const ov = overrides[age];
+      const fg = document.createElement('div');
+      fg.className = 'form-group';
+      const lbl = document.createElement('label');
+      lbl.className = 'form-label';
+      lbl.textContent = age + ' ans — montant réel ($/an)';
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'form-input';
+      inp.placeholder = Math.round(calcule) + ' (calculé)';
+      inp.value = (ov !== undefined && ov !== '') ? ov : '';
+      inp.addEventListener('input', (function(a) { return function() { setRRQOverride(abl, a, this.value); }; })(age));
+      const hint = document.createElement('div');
+      hint.className = 'form-hint';
+      hint.style.color = 'var(--text3)';
+      hint.textContent = 'Calculé: ' + fmt(calcule) + ' — laisser vide pour utiliser le calcul';
+      fg.appendChild(lbl);
+      fg.appendChild(inp);
+      fg.appendChild(hint);
+      ovGrid.appendChild(fg);
+    });
+    wrap.appendChild(ovGrid);
+  }
+
+  // Info alert
+  const montantSelectionne = montantPour(rrqData.ageDemandeRRQ);
+  const hasOvSelected = overrides[rrqData.ageDemandeRRQ] !== undefined && overrides[rrqData.ageDemandeRRQ] !== '';
+  const anneeDemandeRRQ = anneeNaiss + rrqData.ageDemandeRRQ;
+  const alert = document.createElement('div');
+  alert.className = 'alert alert-info';
+  alert.style.fontSize = '12px';
+  alert.innerHTML = 'Rente sélectionnée: <strong>' + fmt(montantSelectionne) + '/an</strong> à ' +
+    rrqData.ageDemandeRRQ + ' ans (en ' + anneeDemandeRRQ + ') — ' +
+    (hasOvSelected
+      ? '<span style="color:var(--teal)">✏️ montant manuel</span>'
+      : '<span style="color:var(--text3)">calcul automatique</span>');
+  wrap.appendChild(alert);
+
+  return wrap;
+}
+
+function renderPSVCard(prenom, ab, psvData, psv65, psv70) {
+  const abl = ab.toLowerCase();
+  const ov65 = psvData && psvData.override65;
+  const ov70 = psvData && psvData.override70;
+  const aff65 = (ov65 !== undefined && ov65 !== '') ? parseFloat(ov65) : psv65;
+  const aff70 = (ov70 !== undefined && ov70 !== '') ? parseFloat(ov70) : psv70;
+  const ageSel = psvData ? (psvData.ageDemande || 65) : 65;
+  const sel65 = ageSel === 65;
+  const hasOv65 = ov65 !== undefined && ov65 !== '';
+  const hasOv70 = ov70 !== undefined && ov70 !== '';
+  const modeManuel = psvData && psvData.modeManuel;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'card';
+
+  // Title
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.innerHTML = '<div class="dot" style="background:' + (ab === 'A' ? 'var(--blue)' : 'var(--pink)') + '"></div>' + prenom;
+  wrap.appendChild(title);
+
+  // Two age cards
+  const g = document.createElement('div');
+  g.className = 'grid grid-2';
+  g.style.cssText = 'gap:12px; margin-bottom:16px;';
+
+  [[65, aff65, psv65, hasOv65, sel65], [70, aff70, psv70, hasOv70, !sel65]].forEach(function(row) {
+    const age = row[0], aff = row[1], calc = row[2], hasOv = row[3], isSel = row[4];
+    const card = document.createElement('div');
+    card.className = 'stat-card' + (isSel ? ' stat-gold' : '');
+    card.style.cssText = 'cursor:pointer; border:' + (isSel ? '1px solid var(--gold)' : '1px solid var(--border)');
+    card.addEventListener('click', (function(a) { return function() { setPSVAge(abl, a); }; })(age));
+    const lbl = document.createElement('div');
+    lbl.className = 'stat-label';
+    lbl.textContent = 'À ' + age + ' ans' + (age === 70 ? ' (+36%)' : '') + (hasOv ? ' ✏️' : '');
+    const val = document.createElement('div');
+    val.className = 'stat-value';
+    val.style.cssText = 'font-size:18px;' + (hasOv ? 'color:var(--teal)' : '');
+    val.textContent = fmt(aff);
+    const sub = document.createElement('div');
+    sub.className = 'stat-sub';
+    sub.textContent = 'Calculé: ' + fmt(calc);
+    card.appendChild(lbl);
+    card.appendChild(val);
+    card.appendChild(sub);
+    g.appendChild(card);
+  });
+  wrap.appendChild(g);
+
+  // Toggle bar
+  const bar = document.createElement('div');
+  bar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;';
+  const sepM = document.createElement('div');
+  sepM.className = 'sep';
+  sepM.style.margin = '0';
+  sepM.textContent = '📋 Valeurs réelles (optionnel)';
+  const btnM = document.createElement('button');
+  btnM.className = 'btn-sm';
+  btnM.style.fontSize = '11px';
+  btnM.textContent = modeManuel ? '▲ Masquer' : '▼ Entrer mes montants réels';
+  btnM.addEventListener('click', function() { togglePSVManuel(abl); });
+  bar.appendChild(sepM);
+  bar.appendChild(btnM);
+  wrap.appendChild(bar);
+
+  // Override inputs
+  if (modeManuel) {
+    const ovG = document.createElement('div');
+    ovG.className = 'grid grid-2';
+    ovG.style.cssText = 'gap:12px; margin-bottom:12px;';
+    [[65, psv65, ov65], [70, psv70, ov70]].forEach(function(row) {
+      const age = row[0], calc = row[1], ov = row[2];
+      const fg = document.createElement('div');
+      fg.className = 'form-group';
+      const lbl = document.createElement('label');
+      lbl.className = 'form-label';
+      lbl.textContent = 'Montant réel à ' + age + ' ans ($/an)';
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'form-input';
+      inp.placeholder = Math.round(calc).toString();
+      inp.value = (ov !== undefined && ov !== '') ? ov : '';
+      inp.addEventListener('input', (function(a) { return function() { setPSVOverride(abl, a, this.value); }; })(age));
+      const hint = document.createElement('div');
+      hint.className = 'form-hint';
+      hint.textContent = 'Laisser vide = calcul auto (' + fmt(calc) + ')';
+      fg.appendChild(lbl);
+      fg.appendChild(inp);
+      fg.appendChild(hint);
+      ovG.appendChild(fg);
+    });
+    wrap.appendChild(ovG);
+  }
+
+  // Alert
+  const affiche = sel65 ? aff65 : aff70;
+  const hasOvSel = sel65 ? hasOv65 : hasOv70;
+  const al = document.createElement('div');
+  al.className = 'alert alert-info';
+  al.style.fontSize = '12px';
+  al.innerHTML = 'Âge sélectionné: <strong>' + ageSel + ' ans</strong> → ' + fmt(affiche) + '/an — ' +
+    (hasOvSel
+      ? '<span style="color:var(--teal)">✏️ montant manuel</span>'
+      : '<span style="color:var(--text3)">calcul automatique</span>');
+  wrap.appendChild(al);
+
+  return wrap;
+}
+
+
+
+// ============================================================
+// INPUT HELPERS
+// ============================================================
+function setInp(key, val) {
+  APP.inputs[key] = val;
+  // Keep nonEnregistre_solde in sync with A+B split
+  if (key === 'nonEnregistreA_solde' || key === 'nonEnregistreB_solde' || key === 'reee_solde' || key === 'reee_etudes') {
+    APP.inputs.nonEnregistre_solde = (APP.inputs.nonEnregistreA_solde||0) + (APP.inputs.nonEnregistreB_solde||0);
+  }
+  saveData();
+  if (key === 'prenomA' || key === 'prenomB') {
+    const a = APP.inputs.prenomA || 'A';
+    const b = APP.inputs.prenomB || 'B';
+    const el = document.getElementById('nav-brand');
+    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' & ' + b + '</span>';
+  }
+}
+
+function setScenarioRetraite(ab, n) {
+  const key = `anneeRetraite${ab}`;
+  APP.inputs[key] = 2026 + n;
+  saveData();
+  renderDonneesTab('profil');
+}
+
+function togglePension(key, el) {
+  APP.inputs[key].active = !APP.inputs[key].active;
+  el.classList.toggle('on');
+  saveData();
+  renderDonneesTab(key === 'pensionA' ? 'pension-a' : 'pension-b');
+}
+
+function setPension(key, field, val) {
+  APP.inputs[key][field] = val;
+  saveData();
+  renderDonneesTab(key === 'pensionA' ? 'pension-a' : 'pension-b');
+}
+
+function setRRQ(ab, val) {
+  APP.inputs['rrq' + ab.toUpperCase()].revenusCotisesMoyens = val;
+  saveData();
+  renderDonneesTab('rrq');
+}
+
+function setRRQAge(ab, age) {
+  APP.inputs['rrq' + ab.toUpperCase()].ageDemandeRRQ = age;
+  saveData();
+  renderDonneesTab('rrq');
+}
+
+function setRRQOverride(ab, age, val) {
+  const key = 'rrq' + ab.toUpperCase();
+  if (!APP.inputs[key].overrides) APP.inputs[key].overrides = {};
+  APP.inputs[key].overrides[age] = val === '' ? '' : parseFloat(val) || '';
+  saveData();
+  renderDonneesTab('rrq');
+}
+
+function toggleRRQManuel(ab) {
+  const key = 'rrq' + ab.toUpperCase();
+  APP.inputs[key].modeManuel = !APP.inputs[key].modeManuel;
+  saveData();
+  renderDonneesTab('rrq');
+}
+
+function setPSVAge(ab, age) {
+  const key = 'psv' + ab.toUpperCase();
+  if (!APP.inputs[key]) APP.inputs[key] = {};
+  APP.inputs[key].ageDemande = age;
+  saveData();
+  renderDonneesTab('psv');
+}
+
+function setPSVOverride(ab, age, val) {
+  const key = 'psv' + ab.toUpperCase();
+  if (!APP.inputs[key]) APP.inputs[key] = { ageDemande: 65 };
+  APP.inputs[key]['override' + age] = val === '' ? '' : parseFloat(val) || '';
+  saveData();
+  renderDonneesTab('psv');
+}
+
+function togglePSVManuel(ab) {
+  const key = 'psv' + ab.toUpperCase();
+  if (!APP.inputs[key]) APP.inputs[key] = { ageDemande: 65 };
+  APP.inputs[key].modeManuel = !APP.inputs[key].modeManuel;
+  saveData();
+  renderDonneesTab('psv');
+}
+
+// ============================================================
+// SCÉNARIOS
+// ============================================================
+function sauvegarderScenario() {
+  const nom = prompt('Nom du scénario (ex: Retraite 2027):');
+  if (!nom) return;
+  const sc = {
+    id: Date.now(), nom,
+    inputs: JSON.parse(JSON.stringify(APP.inputs)),
+    budget: JSON.parse(JSON.stringify(APP.budget)),
+    date: new Date().toISOString(),
+    resultats: APP.resultats,
+  };
+  APP.scenarios = APP.scenarios.slice(-3);
+  APP.scenarios.push(sc);
+  saveData();
+  renderScenariosList();
+}
+
+function renderScenariosList() {
+  const el = document.getElementById('scenarios-list');
+  if (!el) return;
+  if (APP.scenarios.length === 0) {
+    el.innerHTML = '<div style="font-size:11px; color:var(--text3); padding:8px 12px;">Aucun scénario sauvegardé</div>';
+    return;
+  }
+  el.innerHTML = APP.scenarios.map(sc => `
+    <div class="scenario-saved" onclick="chargerScenario(${sc.id})">
+      <div>
+        <div class="scenario-name">${sc.nom}</div>
+        <div class="scenario-meta">${new Date(sc.date).toLocaleDateString('fr-CA')}</div>
+      </div>
+      <button onclick="event.stopPropagation(); supprimerScenario(${sc.id})"
+        style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:0;">×</button>
+    </div>`).join('');
+}
+
+function chargerScenario(id) {
+  const sc = APP.scenarios.find(s => s.id === id);
+  if (!sc) return;
+  APP.inputs = sc.inputs;
+  APP.budget = sc.budget;
+  saveData();
+  renderDonneesTab('profil');
+  renderBudget();
+  recalculerTout();
+  alert(`Scénario "${sc.nom}" chargé`);
+}
+
+function supprimerScenario(id) {
+  APP.scenarios = APP.scenarios.filter(s => s.id !== id);
+  saveData(); renderScenariosList();
+}
+
+// ============================================================
+// CALCUL PRINCIPAL
+// ============================================================
+function recalculerTout() {
+  const inp = APP.inputs;
+
+  // Calcul budget actif (go-go par défaut)
+  const calcBudget = (phase) => (APP.budget[phase] || []).reduce((sum, cat) =>
+    sum + cat.items.reduce((s, i) => s + (parseFloat(i.mensuel)||0)*12, 0), 0);
+  APP.inputs.budgetRetraite = calcBudget('gogo');
+  APP.inputs.budgetSlowgo  = calcBudget('slowgo');
+  APP.inputs.budgetNogo    = calcBudget('nogo');
+
+  // Pension A
+  let pensionAData = null;
+  if (inp.pensionA?.active) {
+    const anneeRetA = inp.anneeRetraiteA;
+    const ageRetA = anneeRetA - inp.anneeNaissanceA;
+    pensionAData = calculerPensionPD({
+      typeRegime: inp.pensionA.typeRegime,
+      tauxAccumulation: inp.pensionA.tauxAccumulation,
+      anneesServiceActuel: inp.pensionA.anneesServiceActuel,
+      salaire: inp.pensionA.salaire,
+      anneeRetraite: anneeRetA,
+      ageRetraite: ageRetA,
+      ageSansPenalite: inp.pensionA.ageSansPenalite,
+      tauxReductionAnnuel: inp.pensionA.tauxReductionAnnuel,
+      indexationReport: inp.pensionA.indexationReport,
+      indexationRente: inp.pensionA.indexationRente,
+      coordRRQ: inp.pensionA.coordRRQ,
+      ageDebutDecaissement: inp.pensionA.ageDebutDecaissement,
+    });
+  }
+
+  // Pension B
+  let pensionBData = null;
+  if (inp.pensionB?.active) {
+    const anneeRetB = inp.anneeRetraiteB;
+    const ageRetB = anneeRetB - inp.anneeNaissanceB;
+    pensionBData = calculerPensionPD({
+      typeRegime: inp.pensionB.typeRegime,
+      tauxAccumulation: inp.pensionB.tauxAccumulation,
+      anneesServiceActuel: inp.pensionB.anneesServiceActuel,
+      salaire: inp.pensionB.salaire,
+      anneeRetraite: anneeRetB,
+      ageRetraite: ageRetB,
+      ageSansPenalite: inp.pensionB.ageSansPenalite,
+      tauxReductionAnnuel: inp.pensionB.tauxReductionAnnuel,
+      indexationReport: inp.pensionB.indexationReport,
+      indexationRente: inp.pensionB.indexationRente,
+      coordRRQ: inp.pensionB.coordRRQ,
+      ageDebutDecaissement: inp.pensionB.ageDebutDecaissement,
+    });
+  }
+
+  // RRQ — utiliser override si disponible pour l'âge sélectionné, sinon calcul auto
+  function getRRQMontant(rrqData, anneeNaissance) {
+    const age = rrqData.ageDemandeRRQ || 65;
+    const ov = rrqData.overrides && rrqData.overrides[age];
+    if (ov !== undefined && ov !== '' && ov > 0) return parseFloat(ov);
+    return calculerRRQ({ anneeNaissance, anneeCalc: 2026,
+      revenusCotisesMoyens: rrqData.revenusCotisesMoyens, ageDemandeRRQ: age });
+  }
+  const rrqAMontant = getRRQMontant(inp.rrqA, inp.anneeNaissanceA);
+  const rrqBMontant = inp.anneeNaissanceB ? getRRQMontant(inp.rrqB, inp.anneeNaissanceB) : 0;
+
+  // PSV — utiliser override si disponible, sinon calcul auto
+  function getPSVMontant(psvData, anneeNaissance) {
+    const age = psvData?.ageDemande || 65;
+    const ovKey = 'override' + age;
+    const ov = psvData && psvData[ovKey];
+    if (ov !== undefined && ov !== '' && ov > 0) return parseFloat(ov);
+    return calculerPSV(anneeNaissance, 2026, age);
+  }
+  const psvAMontant = getPSVMontant(inp.psvA, inp.anneeNaissanceA);
+  const psvBMontant = inp.anneeNaissanceB ? getPSVMontant(inp.psvB, inp.anneeNaissanceB) : 0;
+
+  const projection = projeterRetraite({
+    anneeCalc: 2026,
+    prenomA: inp.prenomA, anneeNaissanceA: inp.anneeNaissanceA, anneeRetraiteA: inp.anneeRetraiteA,
+    reerA_solde: inp.reerA_solde, celiA_solde: inp.celiA_solde,
+    droitsReerA: inp.droitsReerA, droitsCeliA: inp.droitsCeliA,
+    epargneAnnuelleA: inp.epargneAnnuelleA, pctReerA: inp.pctReerA, salaireBrutA: inp.salaireBrutA,
+    pensionAData, rrqA_montant: rrqAMontant, ageRRQA: inp.rrqA.ageDemandeRRQ,
+    psvA_montant: psvAMontant, agePSVA: inp.psvA?.ageDemande || 65,
+    prenomB: inp.prenomB, anneeNaissanceB: inp.anneeNaissanceB || 0,
+    anneeRetraiteB: inp.anneeRetraiteB,
+    reerB_solde: inp.reerB_solde, celiB_solde: inp.celiB_solde,
+    droitsReerB: inp.droitsReerB, droitsCeliB: inp.droitsCeliB,
+    epargneAnnuelleB: inp.epargneAnnuelleB, pctReerB: inp.pctReerB, salaireBrutB: inp.salaireBrutB,
+    pensionBData, rrqB_montant: rrqBMontant, ageRRQB: inp.rrqB?.ageDemandeRRQ || 65,
+    psvB_montant: psvBMontant, agePSVB: inp.psvB?.ageDemande || 65,
+    nonEnregistre_solde: (inp.nonEnregistreA_solde||0) + (inp.nonEnregistreB_solde||0) +
+      Math.max(0, (inp.reee_solde||0) - (inp.reee_etudes||0)),
+    revenuLocation: inp.revenuLocation, indexationLocation: inp.indexationLocation,
+    budgetRetraite: APP.inputs.budgetRetraite,
+    budgetSlowgo: APP.inputs.budgetSlowgo,
+    budgetNogo: APP.inputs.budgetNogo,
+    anneeDeuxiemeRetraite: Math.max(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA),
+    inflation: inp.inflation, rendementAccumulation: inp.rendementAccumulation,
+    rendementRetraite: inp.rendementRetraite, augmentationSalaire: inp.augmentationSalaire,
+    strategieDecaissement: inp.strategieDecaissement,
+  });
+
+  APP.resultats = projection;
+  console.log('✅ Recalcul terminé:', projection.lignes.length, 'années',
+    projection.capitalEpuise ? `⚠️ Épuisement ${projection.capitalEpuise.annee}` : '✅ Capital suffisant');
+
+  // Mettre à jour si sections visibles
+  const activeSection = document.querySelector('.section.active')?.id;
+  if (activeSection === 'section-resultats') setTimeout(function(){ requestAnimationFrame(renderResultats); }, 50);
+  if (activeSection === 'section-details') setTimeout(renderDetails, 50);
+}
+
+// ============================================================
+// SECTION 3: RÉSULTATS
+// ============================================================
+function renderResultats() {
+  if (!APP.resultats || !APP.resultats.lignes?.length) return;
+  const { lignes, capitalEpuise } = APP.resultats;
+  const inp = APP.inputs;
+
+  try {
+    // Alert
+    const alertEl = document.getElementById('alert-capital');
+    if (capitalEpuise) {
+      alertEl.innerHTML = '<div class="alert alert-warn">⚠️ Attention — Épuisement du capital prévu en <strong>' + capitalEpuise.annee + '</strong> : ' + inp.prenomA + ' aura <strong>' + capitalEpuise.ageA + ' ans</strong>' + (capitalEpuise.ageB ? ', ' + inp.prenomB + ' aura <strong>' + capitalEpuise.ageB + ' ans</strong>' : '') + '. Considérez ajuster vos paramètres.</div>';
+    } else {
+      alertEl.innerHTML = '<div class="alert alert-ok">✅ Le capital est suffisant jusqu\'à 100 ans pour les deux conjoints avec les hypothèses actuelles.</div>';
+    }
+
+    // Stats
+    const anneeDeuxiemeRetraite = Math.max(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA);
+    const anneePremiereRetraite = Math.min(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA);
+    const ligneRetraite = lignes.find(function(l){ return l.annee === anneeDeuxiemeRetraite + 1; }) ||
+                          lignes.find(function(l){ return l.annee === anneeDeuxiemeRetraite; }) ||
+                          lignes.find(function(l){ return l.enRetraite; });
+    const revNetRetraite = ligneRetraite ? (ligneRetraite.revNet || 0) : 0;
+    const salaireBrut = (inp.salaireBrutA || 0) + (inp.salaireBrutB || 0);
+    const epargne = (inp.epargneAnnuelleA || 0) + (inp.epargneAnnuelleB || 0);
+    const anneesAvantRetraite = anneePremiereRetraite - 2026;
+
+    // Capital actuel corrigé (A + B + REEE résiduel)
+    const capitalActuel = (inp.nonEnregistreA_solde||0) + (inp.nonEnregistreB_solde||0) +
+      Math.max(0,(inp.reee_solde||0)-(inp.reee_etudes||0)) +
+      (inp.reerA_solde||0) + (inp.reerB_solde||0) +
+      (inp.celiA_solde||0) + (inp.celiB_solde||0);
+    document.getElementById('res-revenu-net').textContent = fmt(revNetRetraite);
+    document.getElementById('res-revenu-pct').textContent = salaireBrut > 0 ? Math.round((revNetRetraite/salaireBrut)*100) + '% du salaire brut' : '';
+    document.getElementById('res-epargne-pct').textContent = salaireBrut > 0 ? Math.round((epargne/salaireBrut)*100) + '%' : 'N/A';
+    document.getElementById('res-annees-retraite').textContent = anneesAvantRetraite + ' an' + (anneesAvantRetraite > 1 ? 's' : '');
+    document.getElementById('res-age-retraite').textContent = inp.prenomA + ': ' + (inp.anneeRetraiteA - inp.anneeNaissanceA) + ' ans | ' + inp.prenomB + ': ' + (inp.anneeRetraiteB - inp.anneeNaissanceB) + ' ans';
+    document.getElementById('res-rendement').textContent = ((inp.rendementAccumulation||0.06)*100).toFixed(1) + '%';
+    document.getElementById('res-rendement-ret').textContent = 'Retraite: ' + ((inp.rendementRetraite||0.045)*100).toFixed(1) + '%';
+
+    // Capital résiduel à 100 ans du conjoint A
+    const age100A = anneeNaissanceA + 100;
+    const ligne100 = lignes.find(function(l){ return l.ageA >= 100; }) || lignes[lignes.length - 1];
+    const capital100 = ligne100 ? ligne100.capitalFin : 0;
+    const annee100 = inp.anneeNaissanceA + 100;
+    document.getElementById('res-capital100-label').textContent = inp.prenomA + ' ' + inp.anneeNaissanceA + ' + 100 ans (' + annee100 + ')';
+    document.getElementById('res-capital100').textContent = capital100 > 100 ? fmt(capital100) : '0 $ (épuisé)';
+    document.getElementById('res-capital100').style.color = capital100 > 100 ? 'var(--green)' : 'var(--coral)';
+    document.getElementById('res-capital100-sub').textContent = capital100 > 100
+      ? 'Capital disponible pour la succession ou les imprévus'
+      : 'Capital épuisé avant 100 ans — revoir les hypothèses';
+  } catch(e) { console.error('Stats error:', e); }
+
+  // Charts — wrapped in try/catch, guard against Chart.js not loaded
+  try {
+    if (typeof Chart === 'undefined') { console.error('Chart.js non chargé'); return; }
+
+    // --- Graphique 1: Capital ---
+    const labelsC = lignes.map(function(l){ return l.annee + ' (' + inp.prenomA + ' ' + l.ageA + ')'; });
+    const capitalData = lignes.map(function(l){ return Math.round(l.capitalFin); });
+
+    if (APP.chartCapital) { APP.chartCapital.destroy(); APP.chartCapital = null; }
+    const canvasC = document.getElementById('chart-capital');
+    if (canvasC) {
+      APP.chartCapital = new Chart(canvasC.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labelsC,
+          datasets: [{
+            label: 'Capital total',
+            data: capitalData,
+            borderColor: '#c9a84c',
+            backgroundColor: 'rgba(201,168,76,0.08)',
+            fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx){ return ' Capital: ' + fmtK(ctx.raw); } } }
+          },
+          scales: {
+            x: { ticks: { color: '#5a5a72', maxTicksLimit: 12, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { ticks: { color: '#5a5a72', callback: function(v){ return fmtK(v); }, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        }
+      });
+    }
+
+    // --- Graphique 2: Sources de revenu (années retraite) ---
+    const lignesRet = lignes.filter(function(l){ return l.enRetraite; });
+    const labelsS = lignesRet.map(function(l){ return l.annee; });
+
+    if (APP.chartSources) { APP.chartSources.destroy(); APP.chartSources = null; }
+    const canvasS = document.getElementById('chart-sources');
+    if (canvasS && lignesRet.length > 0) {
+      APP.chartSources = new Chart(canvasS.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labelsS,
+          datasets: [
+            { label: 'Pension ' + inp.prenomA, data: lignesRet.map(function(l){ return Math.round(l.pensionA||0); }), backgroundColor: '#5b8deecc', stack: 'a' },
+            { label: 'Pension ' + inp.prenomB, data: lignesRet.map(function(l){ return Math.round(l.pensionB||0); }), backgroundColor: '#e060a0cc', stack: 'a' },
+            { label: 'RRQ', data: lignesRet.map(function(l){ return Math.round(l.rrq||0); }), backgroundColor: '#4ecb71cc', stack: 'a' },
+            { label: 'PSV', data: lignesRet.map(function(l){ return Math.round(l.psv||0); }), backgroundColor: '#3ecfb2cc', stack: 'a' },
+            { label: 'Location', data: lignesRet.map(function(l){ return Math.round(l.location||0); }), backgroundColor: '#f0a030cc', stack: 'a' },
+            { label: 'Décaissement', data: lignesRet.map(function(l){ return Math.round(l.retrait||0); }), backgroundColor: '#c9a84ccc', stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, labels: { color: '#9090a8', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+            tooltip: { callbacks: { label: function(ctx){ return ' ' + ctx.dataset.label + ': ' + fmtK(ctx.raw); } } }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: '#5a5a72', maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
+            y: { stacked: true, ticks: { color: '#5a5a72', callback: function(v){ return fmtK(v); }, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        }
+      });
+    }
+  } catch(e) { console.error('Chart error:', e); }
+}
+
+// ============================================================
+// SECTION 4: DÉTAILS
+// ============================================================
+let allLignes = [];
+function renderDetails() {
+  if (!APP.resultats) { recalculerTout(); return; }
+  allLignes = APP.resultats.lignes;
+  filtrerDetails();
+}
+
+function filtrerDetails() {
+  const filtre = document.getElementById('filter-details')?.value || 'all';
+  let lignes = allLignes;
+  if (filtre === 'retraite') lignes = lignes.filter(l => l.enRetraite);
+  if (filtre === 'gogo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 55 && l.ageA < 70);
+  if (filtre === 'slowgo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 70 && l.ageA < 80);
+  if (filtre === 'nogo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 80);
+
+  const tbody = document.getElementById('details-tbody');
+  if (lignes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="19" style="text-align:center; padding:30px; color:var(--text3);">Aucune donnée pour ce filtre</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lignes.map(l => {
+    const deficitClass = l.enRetraite && l.retrait > l.revNet ? 'deficit-row' : (l.enRetraite ? 'retraite-row' : '');
+    const sdSign = l.surplus > 0 ? l.surplus : (l.retrait > 0 ? -l.retrait : 0);
+    return `<tr class="${deficitClass}">
+      <td>${l.annee}${l.enRetraite ? ' <span class="badge badge-gold" style="font-size:9px;">R</span>' : ''}</td>
+      <td>${l.ageA}</td>
+      <td>${l.ageB || '—'}</td>
+      <td>${fmtK(l.capitalDebut)}</td>
+      <td class="${l.pensionA>0?'gold':''}">${l.pensionA>0?fmtK(l.pensionA):'—'}</td>
+      <td class="${l.pensionB>0?'gold':''}">${l.pensionB>0?fmtK(l.pensionB):'—'}</td>
+      <td class="${l.rrq>0?'positive':''}">${l.rrq>0?fmtK(l.rrq):'—'}</td>
+      <td class="${l.psv>0?'positive':''}">${l.psv>0?fmtK(l.psv):'—'}</td>
+      <td>${l.location>0?fmtK(l.location):'—'}</td>
+      <td>${l.travail>0?fmtK(l.travail):'—'}</td>
+      <td class="negative">${l.impots>0?fmtK(l.impots):'—'}</td>
+      <td>${fmtK(l.revNet)}</td>
+      <td class="${l.enRetraite?'':''}"">${l.enRetraite?fmtK(l.depenses):'—'}</td>
+      <td class="${sdSign>0?'positive':'negative'}">${l.enRetraite?(sdSign>=0?'+'+fmtK(sdSign):fmtK(sdSign)):'—'}</td>
+      <td>${fmtK(l.reerA)}</td>
+      <td>${fmtK(l.reerB)}</td>
+      <td>${fmtK(l.celiA)}</td>
+      <td>${fmtK(l.celiB)}</td>
+      <td class="${l.capitalFin<100&&l.enRetraite?'negative':'gold'}">${fmtK(l.capitalFin)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV() {
+  if (!APP.resultats) return;
+  const headers = ['Annee','AgeA','AgeB','CapitalDebut','PensionA','PensionB','RRQ','PSV','Location','Travail','Impots','RevenuNet','Depenses','Surplus','REERA','REERB','CELIA','CELIB','CapitalFin'];
+  const rows = APP.resultats.lignes.map(l => [
+    l.annee, l.ageA, l.ageB||'', Math.round(l.capitalDebut),
+    Math.round(l.pensionA), Math.round(l.pensionB), Math.round(l.rrq), Math.round(l.psv),
+    Math.round(l.location), Math.round(l.travail), Math.round(l.impots), Math.round(l.revNet),
+    Math.round(l.depenses), Math.round(l.surplus - l.retrait),
+    Math.round(l.reerA), Math.round(l.reerB), Math.round(l.celiA), Math.round(l.celiB), Math.round(l.capitalFin)
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `retraite_details_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ============================================================
+// FORMATAGE
+// ============================================================
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(n);
+}
+function fmtK(n) {
+  if (!n || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1000000) return `${(n/1000000).toFixed(1)}M$`;
+  if (Math.abs(n) >= 1000) return `${(n/1000).toFixed(0)}k$`;
+  return `${Math.round(n)}$`;
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  reinitialiserBudget(false);
+  if (!localStorage.getItem('retraite_v2_budget')) reinitialiserBudget();
+  // Update nav brand with names
+  function updateNavBrand() {
+    const a = APP.inputs.prenomA || 'A';
+    const b = APP.inputs.prenomB || 'B';
+    const el = document.getElementById('nav-brand');
+    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' & ' + b + '</span>';
+  }
+  updateNavBrand();
+  renderBudget();
+  showDonneesTab('profil');
+  renderScenariosList();
+  recalculerTout();
+  updateLastUpdate();
+});
+</script>
+</body>
+</html>
