@@ -1353,14 +1353,18 @@ function loadData() {
   if (i) {
     const saved = JSON.parse(i);
     APP.inputs = { ...APP.inputs, ...saved };
-    // Migration: if old nonEnregistre_solde exists but new split fields are 0,
-    // distribute the old value equally between A and B
+    // Migration: nonEnregistre_solde
     if (saved.nonEnregistre_solde && !saved.nonEnregistreA_solde && !saved.nonEnregistreB_solde) {
       APP.inputs.nonEnregistreA_solde = saved.nonEnregistre_solde;
       APP.inputs.nonEnregistreB_solde = 0;
     }
-    // Always keep nonEnregistre_solde in sync for backwards compat
     APP.inputs.nonEnregistre_solde = (APP.inputs.nonEnregistreA_solde||0) + (APP.inputs.nonEnregistreB_solde||0);
+    // Migration: ensure rrqA/rrqB have correct structure (ageCessationCotisation no longer stored)
+    if (!APP.inputs.rrqA) APP.inputs.rrqA = { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 };
+    if (!APP.inputs.rrqB) APP.inputs.rrqB = { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 };
+    if (!APP.inputs.psvA) APP.inputs.psvA = { ageDemande: 65 };
+    if (!APP.inputs.psvB) APP.inputs.psvB = { ageDemande: 65 };
+    if (!APP.inputs.heritages) APP.inputs.heritages = [];
   }
   if (s) APP.scenarios = JSON.parse(s);
   updateLastUpdate();
@@ -2053,17 +2057,54 @@ function renderDonneesTab(tab) {
       const montantA_2026 = Math.round(montantA / Math.pow(1.02, Math.max(0, ageRRQA - (2026 - inp.anneeNaissanceA))));
       const montantB_2026 = Math.round(montantB / Math.pow(1.02, Math.max(0, ageRRQB - (2026 - inp.anneeNaissanceB))));
 
-      hint.innerHTML = '<strong>Ce que vous cherchez :</strong><br>' +
-        '• <strong>' + inp.prenomA + '</strong> — ' + anneesCotA + ' ans cotisés — RRQ à ' + ageRRQA + ' ans (' + anneeRRQA + ') :<br>' +
-          '&nbsp;&nbsp;→ <strong>' + fmt(montantA) + '</strong> en dollars de ' + anneeRRQA + ' (indexé)' +
-          ' | ~<strong>' + fmt(montantA_2026) + '</strong> en dollars 2026' +
-          (ovA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovA)) + '</span>' : '') + '<br>' +
-        '• <strong>' + inp.prenomB + '</strong> — ' + anneesCotB + ' ans cotisés — RRQ à ' + ageRRQB + ' ans (' + anneeRRQB + ') :<br>' +
-          '&nbsp;&nbsp;→ <strong>' + fmt(montantB) + '</strong> en dollars de ' + anneeRRQB + ' (indexé)' +
-          ' | ~<strong>' + fmt(montantB_2026) + '</strong> en dollars 2026' +
-          (ovB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovB)) + '</span>' : '') + '<br>' +
-        '<br><span style="color:var(--text3); font-size:11px;">SimulR affiche en dollars 2026. L\'application affiche en dollars futurs (indexés) pour comparer avec votre budget futur. Les deux sont corrects.</span><br>' +
-        '<br>Si le montant officiel diffère → cliquez <strong>"&#9660; Entrer mes montants réels"</strong> ci-dessous.';
+      // Build hint with DOM to avoid HTML rendering issues
+      hint.style.lineHeight = '1.7';
+      const title = document.createElement('strong'); title.textContent = 'Résumé des montants calculés :';
+      hint.appendChild(title);
+
+      function addRRQRow(prenom, anneeCot, ageRRQ, anneeRRQ, montant, montant2026, ov) {
+        const row = document.createElement('div');
+        row.style.cssText = 'margin:8px 0; padding:8px 10px; background:var(--bg3); border-radius:6px;';
+        const nameSpan = document.createElement('strong'); nameSpan.textContent = prenom;
+        const desc = document.createElement('span');
+        desc.style.color = 'var(--text2)';
+        desc.textContent = ' — ' + anneeCot + ' ans cotisés — RRQ demandé à ' + ageRRQ + ' ans (en ' + anneeRRQ + ')';
+        row.appendChild(nameSpan);
+        row.appendChild(desc);
+
+        const vals = document.createElement('div');
+        vals.style.cssText = 'margin-top:4px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;';
+
+        const futureVal = document.createElement('span');
+        futureVal.innerHTML = '<strong style="color:var(--gold)">' + fmt(montant) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars ' + anneeRRQ + ' (ce que tu recevras)</span>';
+
+        const presentVal = document.createElement('span');
+        presentVal.innerHTML = '<strong style="color:var(--text2)">' + fmt(montant2026) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars 2026 (référence SimulR)</span>';
+
+        vals.appendChild(futureVal);
+        vals.appendChild(presentVal);
+
+        if (ov) {
+          const manuelVal = document.createElement('span');
+          manuelVal.innerHTML = '<span style="color:var(--teal)">✏️ Manuel: <strong>' + fmt(parseFloat(ov)) + '</strong></span>';
+          vals.appendChild(manuelVal);
+        }
+        row.appendChild(vals);
+        hint.appendChild(row);
+      }
+
+      addRRQRow(inp.prenomA, anneesCotA, ageRRQA, anneeRRQA, montantA, montantA_2026, ovA);
+      addRRQRow(inp.prenomB, anneesCotB, ageRRQB, anneeRRQB, montantB, montantB_2026, ovB);
+
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:10px; font-size:11px; color:var(--text3); line-height:1.5;';
+      note.textContent = 'SimulR affiche en dollars 2026. L\'application projette en dollars futurs indexés pour comparer avec votre budget futur. Les deux sont corrects.';
+      hint.appendChild(note);
+
+      const cta = document.createElement('div');
+      cta.style.cssText = 'margin-top:8px; font-size:12px; color:var(--text2);';
+      cta.innerHTML = 'Si le montant officiel diffère → cliquez <strong>"▼ Entrer mes montants réels"</strong> dans la carte correspondante ci-dessous.';
+      hint.appendChild(cta);
 
       steps.appendChild(hint);
       verif.appendChild(steps);
@@ -3025,6 +3066,16 @@ function fmtK(n) {
 // BOOT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Engine version — bump this when calculation formulas change
+  // Forces automatic recalcul if user has cached results from old version
+  const ENGINE_VERSION = '2.1'; // RRQ with years-of-contribution fix
+  const savedVersion = localStorage.getItem('retraite_engine_version');
+  if (savedVersion !== ENGINE_VERSION) {
+    // Don't clear inputs (preserve user data) — just invalidate cached results
+    APP.resultats = null;
+    localStorage.setItem('retraite_engine_version', ENGINE_VERSION);
+  }
+
   loadData();
   reinitialiserBudget(false);
   if (!localStorage.getItem('retraite_v2_budget')) reinitialiserBudget();
