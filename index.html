@@ -1805,7 +1805,7 @@ function renderDonneesTab(tab) {
               </div>
               <div class="form-group">
                 <label class="form-label">Solde résiduel → non enregistré</label>
-                <div class="form-computed">${fmt((inp.reee_solde||0) - (inp.reee_etudes||0))} transféré au non enregistré</div>
+                <div class="form-computed" id="reee-residuel">${fmt(Math.max(0,(inp.reee_solde||0) - (inp.reee_etudes||0)))} transféré au non enregistré</div>
                 <div class="form-hint">Excédent ajouté au solde non enregistré</div>
               </div>
             </div>
@@ -2367,6 +2367,12 @@ function setInp(key, val) {
   // Keep nonEnregistre_solde in sync with A+B split
   if (key === 'nonEnregistreA_solde' || key === 'nonEnregistreB_solde' || key === 'reee_solde' || key === 'reee_etudes') {
     APP.inputs.nonEnregistre_solde = (APP.inputs.nonEnregistreA_solde||0) + (APP.inputs.nonEnregistreB_solde||0);
+    // Update REEE residuel display in-place (no full re-render needed)
+    const reeeEl = document.getElementById('reee-residuel');
+    if (reeeEl) {
+      const residuel = Math.max(0, (APP.inputs.reee_solde||0) - (APP.inputs.reee_etudes||0));
+      reeeEl.textContent = fmt(residuel) + ' transféré au non enregistré';
+    }
   }
   saveData();
   if (key === 'prenomA' || key === 'prenomB') {
@@ -2659,7 +2665,7 @@ function renderResultats() {
     document.getElementById('res-rendement-ret').textContent = 'Retraite: ' + ((inp.rendementRetraite||0.045)*100).toFixed(1) + '%';
 
     // Capital résiduel à 100 ans du conjoint A
-    const age100A = anneeNaissanceA + 100;
+    const age100A = inp.anneeNaissanceA + 100;
     const ligne100 = lignes.find(function(l){ return l.ageA >= 100; }) || lignes[lignes.length - 1];
     const capital100 = ligne100 ? ligne100.capitalFin : 0;
     const annee100 = inp.anneeNaissanceA + 100;
