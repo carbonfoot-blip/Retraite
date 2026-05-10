@@ -1944,16 +1944,92 @@ function renderDonneesTab(tab) {
       const optsA = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceA, anneeCalc: 2026, revenusCotisesMoyens: rrqA.revenusCotisesMoyens });
       const optsB = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceB, anneeCalc: 2026, revenusCotisesMoyens: rrqB.revenusCotisesMoyens });
       c.innerHTML = '';
+
+      // Title
       const titleRRQ = document.createElement('div');
       titleRRQ.className = 'page-title';
-      titleRRQ.style.marginBottom = '20px';
+      titleRRQ.style.marginBottom = '16px';
       titleRRQ.textContent = 'Régime de Rentes du Québec (RRQ)';
       c.appendChild(titleRRQ);
-      const alertRRQ = document.createElement('div');
-      alertRRQ.className = 'alert alert-info';
-      alertRRQ.style.marginBottom = '16px';
-      alertRRQ.textContent = '💡 Calcul actuariel basé sur MGA 2026 (74 600 $) et rente max 18 091,80 $/an à 65 ans. Entrez vos revenus cotisés moyens ou le montant exact de votre relevé RRQ.';
-      c.appendChild(alertRRQ);
+
+      // Verification panel
+      const verif = document.createElement('div');
+      verif.className = 'card';
+      verif.style.cssText = 'margin-bottom:20px; border-color:rgba(62,207,178,0.3); background:rgba(62,207,178,0.04);';
+
+      const verifTitle = document.createElement('div');
+      verifTitle.className = 'card-title';
+      verifTitle.style.color = 'var(--teal)';
+      verifTitle.innerHTML = '<div class="dot" style="background:var(--teal)"></div>🔍 Valider vos chiffres sur les sites officiels';
+      verif.appendChild(verifTitle);
+
+      const steps = document.createElement('div');
+      steps.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
+
+      function linkRow(icon, title, desc, url, btnLabel) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--bg3); border-radius:var(--radius-sm); flex-wrap:wrap;';
+        const left = document.createElement('div');
+        left.style.flex = '1';
+        left.innerHTML = '<div style="font-size:13px; font-weight:500; color:var(--text);">' + icon + ' ' + title + '</div>' +
+          '<div style="font-size:11px; color:var(--text3); margin-top:3px;">' + desc + '</div>';
+        const btn = document.createElement('a');
+        btn.href = url;
+        btn.target = '_blank';
+        btn.rel = 'noopener';
+        btn.className = 'btn-sm';
+        btn.style.cssText = 'text-decoration:none; color:var(--teal); border-color:rgba(62,207,178,0.3); white-space:nowrap;';
+        btn.textContent = btnLabel + ' ↗';
+        row.appendChild(left);
+        row.appendChild(btn);
+        return row;
+      }
+
+      // Step 1 — Mon dossier RRQ
+      steps.appendChild(linkRow('1️⃣', 'Mon dossier — Retraite Québec',
+        'Connectez-vous avec clicSEQUR → voir votre relevé de participation → montants RRQ estimés à 60, 65 et 70 ans',
+        'https://mondossier.rrq.gouv.qc.ca/',
+        'Ouvrir Mon dossier RRQ'));
+
+      // Step 2 — SimulR
+      steps.appendChild(linkRow('2️⃣', 'SimulR — Simulateur simplifié',
+        'Estimation rapide sans connexion. Entrez votre date de naissance et salaire moyen pour obtenir une projection.',
+        'https://www.retraitequebec.gouv.qc.ca/fr/services-en-ligne-outils/simulr/Pages/simulR.aspx',
+        'Ouvrir SimulR'));
+
+      // Step 3 — CFFP Simulateur RRQ (chercheurs Sherbrooke)
+      steps.appendChild(linkRow('3️⃣', 'Simulateur RRQ — Université de Sherbrooke (CFFP)',
+        'Le plus précis. Permet d\'entrer l\'historique de cotisation année par année. Inclut le régime supplémentaire 2019+.',
+        'https://cffp.recherche.usherbrooke.ca/simulateur-prestation-rrq/',
+        'Ouvrir simulateur CFFP'));
+
+      // What to look for
+      const hint = document.createElement('div');
+      hint.className = 'alert alert-info';
+      hint.style.cssText = 'margin-top:10px; font-size:12px;';
+
+      const ageRRQA = rrqA.ageDemandeRRQ;
+      const ageRRQB = rrqB.ageDemandeRRQ;
+      const anneeRRQA = inp.anneeNaissanceA + ageRRQA;
+      const anneeRRQB = inp.anneeNaissanceB + ageRRQB;
+      const montantA = optsA['rrq' + ageRRQA];
+      const montantB = optsB['rrq' + ageRRQB];
+      const ovA = rrqA.overrides && rrqA.overrides[ageRRQA];
+      const ovB = rrqB.overrides && rrqB.overrides[ageRRQB];
+
+      hint.innerHTML = '<strong>Ce que vous cherchez :</strong><br>' +
+        '• <strong>' + inp.prenomA + '</strong> — rente RRQ à ' + ageRRQA + ' ans (en ' + anneeRRQA + ') → ' +
+          'App calcule <strong>' + fmt(montantA) + '</strong>' +
+          (ovA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovA)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+        '• <strong>' + inp.prenomB + '</strong> — rente RRQ à ' + ageRRQB + ' ans (en ' + anneeRRQB + ') → ' +
+          'App calcule <strong>' + fmt(montantB) + '</strong>' +
+          (ovB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovB)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+        '<br>Si le montant officiel diffère → cliquez <strong>"▼ Entrer mes montants réels"</strong> dans la carte correspondante.';
+
+      steps.appendChild(hint);
+      verif.appendChild(steps);
+      c.appendChild(verif);
+
       const gridRRQ = document.createElement('div');
       gridRRQ.className = 'grid grid-2';
       gridRRQ.style.gap = '20px';
@@ -1969,16 +2045,79 @@ function renderDonneesTab(tab) {
       const psvB_65 = calculerPSV(inp.anneeNaissanceB, 2026, 65);
       const psvB_70 = calculerPSV(inp.anneeNaissanceB, 2026, 70);
       c.innerHTML = '';
+
       const titlePSV = document.createElement('div');
       titlePSV.className = 'page-title';
-      titlePSV.style.marginBottom = '20px';
+      titlePSV.style.marginBottom = '16px';
       titlePSV.textContent = 'Pension de Sécurité de la Vieillesse (PSV)';
       c.appendChild(titlePSV);
-      const alertPSV = document.createElement('div');
-      alertPSV.className = 'alert alert-info';
-      alertPSV.style.marginBottom = '16px';
-      alertPSV.textContent = 'Calculé automatiquement. Montant de base 2026: 727,67 $/mois à 65 ans, +36% si reporté à 70 ans.';
-      c.appendChild(alertPSV);
+
+      // Verification panel PSV
+      const verifPSV = document.createElement('div');
+      verifPSV.className = 'card';
+      verifPSV.style.cssText = 'margin-bottom:20px; border-color:rgba(62,207,178,0.3); background:rgba(62,207,178,0.04);';
+
+      const verifTitlePSV = document.createElement('div');
+      verifTitlePSV.className = 'card-title';
+      verifTitlePSV.style.color = 'var(--teal)';
+      verifTitlePSV.innerHTML = '<div class="dot" style="background:var(--teal)"></div>🔍 Valider sur les sites officiels';
+      verifPSV.appendChild(verifTitlePSV);
+
+      const stepsPSV = document.createElement('div');
+      stepsPSV.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
+
+      function linkRowPSV(icon, title, desc, url, btnLabel) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--bg3); border-radius:var(--radius-sm); flex-wrap:wrap;';
+        const left = document.createElement('div');
+        left.style.flex = '1';
+        left.innerHTML = '<div style="font-size:13px; font-weight:500; color:var(--text);">' + icon + ' ' + title + '</div>' +
+          '<div style="font-size:11px; color:var(--text3); margin-top:3px;">' + desc + '</div>';
+        const btn = document.createElement('a');
+        btn.href = url; btn.target = '_blank'; btn.rel = 'noopener';
+        btn.className = 'btn-sm';
+        btn.style.cssText = 'text-decoration:none; color:var(--teal); border-color:rgba(62,207,178,0.3); white-space:nowrap;';
+        btn.textContent = btnLabel + ' ↗';
+        row.appendChild(left); row.appendChild(btn);
+        return row;
+      }
+
+      stepsPSV.appendChild(linkRowPSV('1️⃣', 'Mon dossier Service Canada',
+        'Connexion avec clicSEQUR ou compte Service Canada → voir votre estimation PSV personnalisée selon vos années de résidence au Canada.',
+        'https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html',
+        'Ouvrir Mon dossier'));
+
+      stepsPSV.appendChild(linkRowPSV('2️⃣', 'Calculatrice PSV — Canada.ca',
+        'Outil anonyme pour estimer votre PSV et SRG selon vos revenus et années de résidence. Aucune connexion requise.',
+        'https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/securite-vieillesse/calculatrice.html',
+        'Ouvrir calculatrice PSV'));
+
+      // Current amounts hint
+      const hintPSV = document.createElement('div');
+      hintPSV.className = 'alert alert-info';
+      hintPSV.style.cssText = 'margin-top:10px; font-size:12px;';
+
+      const agePSVA = inp.psvA ? inp.psvA.ageDemande : 65;
+      const agePSVB = inp.psvB ? inp.psvB.ageDemande : 65;
+      const mPSVA = agePSVA === 65 ? psvA_65 : psvA_70;
+      const mPSVB = agePSVB === 65 ? psvB_65 : psvB_70;
+      const ovPSVA = inp.psvA && inp.psvA['override' + agePSVA];
+      const ovPSVB = inp.psvB && inp.psvB['override' + agePSVB];
+
+      hintPSV.innerHTML = "<strong>Montants dans l'app (en dollars 2026 indexés) :</strong><br>" +
+        '• <strong>' + inp.prenomA + '</strong> à ' + agePSVA + ' ans → ' +
+          'App calcule <strong>' + fmt(mPSVA) + '/an</strong>' +
+          (ovPSVA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVA)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+        '• <strong>' + inp.prenomB + '</strong> à ' + agePSVB + ' ans → ' +
+          'App calcule <strong>' + fmt(mPSVB) + '/an</strong>' +
+          (ovPSVB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVB)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+        '<br><strong>Note :</strong> la PSV est garantie si vous avez résidé au Canada 40+ ans après 18 ans. ' +
+        'Moins de 40 ans → montant réduit proportionnellement (1/40 par année manquante).';
+
+      stepsPSV.appendChild(hintPSV);
+      verifPSV.appendChild(stepsPSV);
+      c.appendChild(verifPSV);
+
       const gridPSV = document.createElement('div');
       gridPSV.className = 'grid grid-2';
       gridPSV.style.gap = '20px';
