@@ -2209,93 +2209,92 @@ function renderDonneesTab(tab) {
 
     case 'hypotheses': {
       const heritages = inp.heritages || [];
-      // Build heritages list using DOM to avoid string quoting issues
-      function buildHeritagesList(hList, inpData) {
-        if (hList.length === 0) {
-          return '<div style="color:var(--text3); font-size:13px; padding:8px 0;">Aucun héritage configuré.</div>';
-        }
-        return hList.map(function(h, i) {
-          const ageA = h.annee - inpData.anneeNaissanceA;
-          const ageB = h.annee - inpData.anneeNaissanceB;
-          const row = document.createElement('div');
-          row.style.cssText = 'display:grid; grid-template-columns:1fr 140px 140px auto; gap:10px; align-items:end; padding:8px 0; border-bottom:1px solid var(--border);';
-          // Description
-          const fg1 = document.createElement('div'); fg1.className = 'form-group'; fg1.style.margin = '0';
-          const l1 = document.createElement('label'); l1.className = 'form-label'; l1.textContent = 'Description';
-          const i1 = document.createElement('input'); i1.type = 'text'; i1.className = 'form-input';
-          i1.value = h.description || ''; i1.placeholder = 'Ex: Héritage parental';
-          i1.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'description',this.value); }; })(i));
-          fg1.appendChild(l1); fg1.appendChild(i1);
-          // Année
-          const fg2 = document.createElement('div'); fg2.className = 'form-group'; fg2.style.margin = '0';
-          const l2 = document.createElement('label'); l2.className = 'form-label'; l2.textContent = 'Année';
-          const i2 = document.createElement('input'); i2.type = 'number'; i2.className = 'form-input';
-          i2.value = h.annee; i2.min = '2026'; i2.max = '2090';
-          i2.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'annee',parseInt(this.value)||2050); }; })(i));
-          const h2 = document.createElement('div'); h2.className = 'form-hint';
-          h2.textContent = inpData.prenomA + ': ' + ageA + ' ans | ' + inpData.prenomB + ': ' + ageB + ' ans';
-          fg2.appendChild(l2); fg2.appendChild(i2); fg2.appendChild(h2);
-          // Montant
-          const fg3 = document.createElement('div'); fg3.className = 'form-group'; fg3.style.margin = '0';
-          const l3 = document.createElement('label'); l3.className = 'form-label'; l3.textContent = 'Montant net ($)';
-          const i3 = document.createElement('input'); i3.type = 'number'; i3.className = 'form-input';
-          i3.value = h.montant;
-          i3.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'montant',parseFloat(this.value)||0); }; })(i));
-          const h3 = document.createElement('div'); h3.className = 'form-hint'; h3.textContent = 'Montant net après impôts succession';
-          fg3.appendChild(l3); fg3.appendChild(i3); fg3.appendChild(h3);
-          // Delete
-          const db = document.createElement('button'); db.className = 'del-btn'; db.style.marginBottom = '2px'; db.textContent = '×';
-          db.addEventListener('click', (function(n){ return function(){ supprimerHeritage(n); }; })(i));
-          row.appendChild(fg1); row.appendChild(fg2); row.appendChild(fg3); row.appendChild(db);
-          return row.outerHTML;
-        }).join('');
-      }
-      const heritagesHTML = buildHeritagesList(heritages, inp);
+      c.innerHTML = '';
 
-      c.innerHTML = `
-        <div class="page-title" style="margin-bottom:20px;">Hypothèses de calcul</div>
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-title"><div class="dot"></div>Rendements & inflation</div>
-          <div class="grid grid-3" style="gap:16px;">
-            <div class="form-group">
-              <label class="form-label">Rendement — phase accumulation (%)</label>
-              <input type="number" class="form-input" step="0.5" value="${(inp.rendementAccumulation*100).toFixed(1)}"
-                oninput="setInp('rendementAccumulation',parseFloat(this.value)/100)">
-              <div class="form-hint">Historique long terme: 6–7%</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Rendement — phase retraite (%)</label>
-              <input type="number" class="form-input" step="0.5" value="${(inp.rendementRetraite*100).toFixed(1)}"
-                oninput="setInp('rendementRetraite',parseFloat(this.value)/100)">
-              <div class="form-hint">Conservateur: 3–4% | Modéré: 4–5%</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Inflation annuelle (%)</label>
-              <input type="number" class="form-input" step="0.1" value="${(inp.inflation*100).toFixed(1)}"
-                oninput="setInp('inflation',parseFloat(this.value)/100)">
-              <div class="form-hint">Cible BdC: 2% | Actuel: ~2.5%</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Augmentation salaire annuelle (%)</label>
-              <input type="number" class="form-input" step="0.5" value="${(inp.augmentationSalaire*100).toFixed(1)}"
-                oninput="setInp('augmentationSalaire',parseFloat(this.value)/100)">
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title"><div class="dot" style="background:var(--amber)"></div>Héritages & revenus exceptionnels
-            <span class="badge badge-gold" style="margin-left:8px; font-size:10px;">optionnel</span>
-          </div>
-          <div class="alert alert-info" style="margin-bottom:16px; font-size:12px;">
-            💡 Chaque héritage est ajouté directement au capital non enregistré l'année indiquée — sans impact fiscal immédiat dans le modèle
-            (conservateur: en réalité, selon la source, il peut y avoir des impôts à la succession).
-            Utilisez le montant <strong>net</strong> que vous estimez réellement recevoir.
-          </div>
-          <div id="heritages-list">${heritagesHTML}</div>
-          <button class="btn-sm" onclick="ajouterHeritage()" style="margin-top:12px; color:var(--amber); border-color:rgba(240,160,48,0.3);">
-            + Ajouter un héritage / revenu exceptionnel
-          </button>
-        </div>`;
+      const hTitle = document.createElement('div');
+      hTitle.className = 'page-title'; hTitle.style.marginBottom = '20px';
+      hTitle.textContent = 'Hypothèses de calcul';
+      c.appendChild(hTitle);
+
+      const rCard = document.createElement('div');
+      rCard.className = 'card'; rCard.style.marginBottom = '16px';
+      rCard.innerHTML = '<div class="card-title"><div class="dot"></div>Rendements &amp; inflation</div>' +
+        '<div class="grid grid-3" style="gap:16px;">' +
+          '<div class="form-group"><label class="form-label">Rendement — phase accumulation (%)</label>' +
+            '<input type="number" class="form-input" step="0.5" id="h-rA" value="' + (inp.rendementAccumulation*100).toFixed(1) + '">' +
+            '<div class="form-hint">Historique long terme: 6–7%</div></div>' +
+          '<div class="form-group"><label class="form-label">Rendement — phase retraite (%)</label>' +
+            '<input type="number" class="form-input" step="0.5" id="h-rR" value="' + (inp.rendementRetraite*100).toFixed(1) + '">' +
+            '<div class="form-hint">Conservateur: 3–4% | Modéré: 4–5%</div></div>' +
+          '<div class="form-group"><label class="form-label">Inflation annuelle (%)</label>' +
+            '<input type="number" class="form-input" step="0.1" id="h-inf" value="' + (inp.inflation*100).toFixed(1) + '">' +
+            '<div class="form-hint">Cible BdC: 2% | Actuel: ~2.5%</div></div>' +
+          '<div class="form-group"><label class="form-label">Augmentation salaire annuelle (%)</label>' +
+            '<input type="number" class="form-input" step="0.5" id="h-aug" value="' + (inp.augmentationSalaire*100).toFixed(1) + '">' +
+          '</div></div>';
+      c.appendChild(rCard);
+      rCard.querySelector('#h-rA').addEventListener('input', function(){ setInp('rendementAccumulation', parseFloat(this.value)/100); });
+      rCard.querySelector('#h-rR').addEventListener('input', function(){ setInp('rendementRetraite', parseFloat(this.value)/100); });
+      rCard.querySelector('#h-inf').addEventListener('input', function(){ setInp('inflation', parseFloat(this.value)/100); });
+      rCard.querySelector('#h-aug').addEventListener('input', function(){ setInp('augmentationSalaire', parseFloat(this.value)/100); });
+
+      const hCard = document.createElement('div'); hCard.className = 'card';
+      const hCardTitle = document.createElement('div'); hCardTitle.className = 'card-title';
+      hCardTitle.innerHTML = '<div class="dot" style="background:var(--amber)"></div>Héritages &amp; revenus exceptionnels<span class="badge badge-gold" style="margin-left:8px;font-size:10px;">optionnel</span>';
+      hCard.appendChild(hCardTitle);
+      const hAlert = document.createElement('div'); hAlert.className = 'alert alert-info';
+      hAlert.style.cssText = 'margin-bottom:16px;font-size:12px;';
+      hAlert.textContent = 'Chaque héritage est ajouté directement au capital non enregistré l’année indiquée. Utilisez le montant net après impôts de succession.';
+      hCard.appendChild(hAlert);
+
+      const hList = document.createElement('div'); hList.id = 'heritages-list';
+
+      function buildRow(h, idx) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 140px auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid var(--border);';
+        const fg1 = document.createElement('div'); fg1.className = 'form-group'; fg1.style.margin = '0';
+        const l1 = document.createElement('label'); l1.className = 'form-label'; l1.textContent = 'Description';
+        const in1 = document.createElement('input'); in1.type = 'text'; in1.className = 'form-input';
+        in1.value = h.description || ''; in1.placeholder = 'Ex: Héritage parental';
+        in1.addEventListener('input', (function(n){ return function(){ updateHeritage(n, 'description', this.value); }; })(idx));
+        fg1.appendChild(l1); fg1.appendChild(in1);
+        const fg2 = document.createElement('div'); fg2.className = 'form-group'; fg2.style.margin = '0';
+        const l2 = document.createElement('label'); l2.className = 'form-label'; l2.textContent = 'Année';
+        const in2 = document.createElement('input'); in2.type = 'number'; in2.className = 'form-input';
+        in2.value = h.annee; in2.min = '2026'; in2.max = '2090';
+        in2.addEventListener('input', (function(n){ return function(){ updateHeritage(n, 'annee', parseInt(this.value)||2050); }; })(idx));
+        const hint2 = document.createElement('div'); hint2.className = 'form-hint';
+        hint2.textContent = inp.prenomA + ': ' + (h.annee - inp.anneeNaissanceA) + ' ans | ' + inp.prenomB + ': ' + (h.annee - inp.anneeNaissanceB) + ' ans';
+        fg2.appendChild(l2); fg2.appendChild(in2); fg2.appendChild(hint2);
+        const fg3 = document.createElement('div'); fg3.className = 'form-group'; fg3.style.margin = '0';
+        const l3 = document.createElement('label'); l3.className = 'form-label'; l3.textContent = 'Montant net ($)';
+        const in3 = document.createElement('input'); in3.type = 'number'; in3.className = 'form-input';
+        in3.value = h.montant;
+        in3.addEventListener('input', (function(n){ return function(){ updateHeritage(n, 'montant', parseFloat(this.value)||0); }; })(idx));
+        const hint3 = document.createElement('div'); hint3.className = 'form-hint'; hint3.textContent = 'Après impôts succession';
+        fg3.appendChild(l3); fg3.appendChild(in3); fg3.appendChild(hint3);
+        const db = document.createElement('button'); db.className = 'del-btn'; db.style.marginBottom = '2px'; db.textContent = '×';
+        db.addEventListener('click', (function(n){ return function(){ supprimerHeritage(n); }; })(idx));
+        row.appendChild(fg1); row.appendChild(fg2); row.appendChild(fg3); row.appendChild(db);
+        return row;
+      }
+
+      if (heritages.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--text3);font-size:13px;padding:10px 0;';
+        empty.textContent = 'Aucun héritage configuré. Cliquez + pour en ajouter un.';
+        hList.appendChild(empty);
+      } else {
+        heritages.forEach(function(h, idx) { hList.appendChild(buildRow(h, idx)); });
+      }
+      hCard.appendChild(hList);
+
+      const addBtn = document.createElement('button'); addBtn.className = 'btn-sm';
+      addBtn.style.cssText = 'margin-top:12px;color:var(--amber);border-color:rgba(240,160,48,0.3);';
+      addBtn.textContent = '+ Ajouter un héritage / revenu exceptionnel';
+      addBtn.addEventListener('click', ajouterHeritage);
+      hCard.appendChild(addBtn);
+      c.appendChild(hCard);
       break;
     }
   }
