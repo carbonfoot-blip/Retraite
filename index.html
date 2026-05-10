@@ -767,12 +767,38 @@ const FISCAL_2026 = {
 };
 
 function calculerRRQ(p) {
+  // p.anneeNaissance, p.anneeCalc, p.revenusCotisesMoyens, p.ageDemandeRRQ
+  // p.ageCessationCotisation (optional) — âge auquel les cotisations s'arrêtent (ex: retraite à 48 ans)
   const F = FISCAL_2026;
-  const ratio = Math.min((p.revenusCotisesMoyens || 0) / F.rrq.mga, 1.0);
-  const renteBase65 = ratio * F.rrq.renteMax65;
   const ageActuel = p.anneeCalc - p.anneeNaissance;
+
+  // Âge de fin de cotisation — si retraite avant 65 ans, les années manquantes comptent comme 0$
+  // RRQ compte les années de 18 ans jusqu'à 65 ans max = 47 ans cotisables
+  // Exclusion 15% des années les plus basses = ~7 ans exclus → 40 années nettes
+  const AGE_DEBUT_COTISATION = 18;
+  const AGE_FIN_THEORIQUE = 65;
+  const ANNEES_MAX = AGE_FIN_THEORIQUE - AGE_DEBUT_COTISATION; // 47
+  const EXCLUSION = Math.floor(ANNEES_MAX * 0.15); // 7
+  const ANNEES_NETTES = ANNEES_MAX - EXCLUSION; // 40
+
+  // Années effectivement cotisées
+  const ageCessation = p.ageCessationCotisation || AGE_FIN_THEORIQUE;
+  const anneesCotisees = Math.max(0, Math.min(ageCessation, AGE_FIN_THEORIQUE) - AGE_DEBUT_COTISATION);
+
+  // Fraction du maximum: si 30 ans cotisés sur 40 nets → 75%
+  const fraction = Math.min(anneesCotisees / ANNEES_NETTES, 1.0);
+
+  // Ratio salaire/MGA (plafonné à 1)
+  const ratioSalaire = Math.min((p.revenusCotisesMoyens || 0) / F.rrq.mga, 1.0);
+
+  // Rente de base à 65 ans = fraction × ratioSalaire × renteMax
+  const renteBase65 = fraction * ratioSalaire * F.rrq.renteMax65;
+
+  // Indexation de l'année de référence jusqu'à l'année de demande
   const anneesDemande = p.ageDemandeRRQ - ageActuel;
   const renteIdx65 = renteBase65 * Math.pow(1 + F.rrq.indexation, Math.max(0, anneesDemande));
+
+  // Facteur actuariel selon l'âge de demande
   if (p.ageDemandeRRQ === 65) return Math.max(0, renteIdx65);
   if (p.ageDemandeRRQ < 65) {
     const mois = (65 - p.ageDemandeRRQ) * 12;
@@ -1941,8 +1967,12 @@ function renderDonneesTab(tab) {
     case 'rrq': {
       const rrqA = APP.inputs.rrqA;
       const rrqB = APP.inputs.rrqB;
-      const optsA = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceA, anneeCalc: 2026, revenusCotisesMoyens: rrqA.revenusCotisesMoyens });
-      const optsB = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceB, anneeCalc: 2026, revenusCotisesMoyens: rrqB.revenusCotisesMoyens });
+      const ageCessA = inp.anneeRetraiteA - inp.anneeNaissanceA;
+      const optsA = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceA, anneeCalc: 2026,
+        revenusCotisesMoyens: rrqA.revenusCotisesMoyens, ageCessationCotisation: ageCessA });
+      const ageCessB = inp.anneeRetraiteB - inp.anneeNaissanceB;
+      const optsB = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceB, anneeCalc: 2026,
+        revenusCotisesMoyens: rrqB.revenusCotisesMoyens, ageCessationCotisation: ageCessB });
       c.innerHTML = '';
 
       // Title
@@ -2016,15 +2046,24 @@ function renderDonneesTab(tab) {
       const montantB = optsB['rrq' + ageRRQB];
       const ovA = rrqA.overrides && rrqA.overrides[ageRRQA];
       const ovB = rrqB.overrides && rrqB.overrides[ageRRQB];
+      // Années de cotisation réelles
+      const anneesCotA = Math.max(0, Math.min(ageCessA, 65) - 18);
+      const anneesCotB = Math.max(0, Math.min(ageCessB, 65) - 18);
+      // Montant en dollars d'aujourd'hui (2026) pour comparaison avec SimulR
+      const montantA_2026 = Math.round(montantA / Math.pow(1.02, Math.max(0, ageRRQA - (2026 - inp.anneeNaissanceA))));
+      const montantB_2026 = Math.round(montantB / Math.pow(1.02, Math.max(0, ageRRQB - (2026 - inp.anneeNaissanceB))));
 
       hint.innerHTML = '<strong>Ce que vous cherchez :</strong><br>' +
-        '• <strong>' + inp.prenomA + '</strong> — rente RRQ à ' + ageRRQA + ' ans (en ' + anneeRRQA + ') → ' +
-          'App calcule <strong>' + fmt(montantA) + '</strong>' +
-          (ovA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovA)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
-        '• <strong>' + inp.prenomB + '</strong> — rente RRQ à ' + ageRRQB + ' ans (en ' + anneeRRQB + ') → ' +
-          'App calcule <strong>' + fmt(montantB) + '</strong>' +
-          (ovB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovB)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
-        '<br>Si le montant officiel diffère → cliquez <strong>"▼ Entrer mes montants réels"</strong> dans la carte correspondante.';
+        '• <strong>' + inp.prenomA + '</strong> — ' + anneesCotA + ' ans cotisés — RRQ à ' + ageRRQA + ' ans (' + anneeRRQA + ') :<br>' +
+          '&nbsp;&nbsp;→ <strong>' + fmt(montantA) + '</strong> en dollars de ' + anneeRRQA + ' (indexé)' +
+          ' | ~<strong>' + fmt(montantA_2026) + '</strong> en dollars 2026' +
+          (ovA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovA)) + '</span>' : '') + '<br>' +
+        '• <strong>' + inp.prenomB + '</strong> — ' + anneesCotB + ' ans cotisés — RRQ à ' + ageRRQB + ' ans (' + anneeRRQB + ') :<br>' +
+          '&nbsp;&nbsp;→ <strong>' + fmt(montantB) + '</strong> en dollars de ' + anneeRRQB + ' (indexé)' +
+          ' | ~<strong>' + fmt(montantB_2026) + '</strong> en dollars 2026' +
+          (ovB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovB)) + '</span>' : '') + '<br>' +
+        '<br><span style="color:var(--text3); font-size:11px;">SimulR affiche en dollars 2026. L\'application affiche en dollars futurs (indexés) pour comparer avec votre budget futur. Les deux sont corrects.</span><br>' +
+        '<br>Si le montant officiel diffère → cliquez <strong>"&#9660; Entrer mes montants réels"</strong> ci-dessous.';
 
       steps.appendChild(hint);
       verif.appendChild(steps);
@@ -2703,15 +2742,17 @@ function recalculerTout() {
   }
 
   // RRQ — utiliser override si disponible pour l'âge sélectionné, sinon calcul auto
-  function getRRQMontant(rrqData, anneeNaissance) {
+  function getRRQMontant(rrqData, anneeNaissance, anneeRetraite) {
     const age = rrqData.ageDemandeRRQ || 65;
     const ov = rrqData.overrides && rrqData.overrides[age];
     if (ov !== undefined && ov !== '' && ov > 0) return parseFloat(ov);
+    const ageCessation = anneeRetraite ? (anneeRetraite - anneeNaissance) : 65;
     return calculerRRQ({ anneeNaissance, anneeCalc: 2026,
-      revenusCotisesMoyens: rrqData.revenusCotisesMoyens, ageDemandeRRQ: age });
+      revenusCotisesMoyens: rrqData.revenusCotisesMoyens, ageDemandeRRQ: age,
+      ageCessationCotisation: ageCessation });
   }
-  const rrqAMontant = getRRQMontant(inp.rrqA, inp.anneeNaissanceA);
-  const rrqBMontant = inp.anneeNaissanceB ? getRRQMontant(inp.rrqB, inp.anneeNaissanceB) : 0;
+  const rrqAMontant = getRRQMontant(inp.rrqA, inp.anneeNaissanceA, inp.anneeRetraiteA);
+  const rrqBMontant = inp.anneeNaissanceB ? getRRQMontant(inp.rrqB, inp.anneeNaissanceB, inp.anneeRetraiteB) : 0;
 
   // PSV — utiliser override si disponible, sinon calcul auto
   function getPSVMontant(psvData, anneeNaissance) {
