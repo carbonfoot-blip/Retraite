@@ -704,6 +704,7 @@ body {
             <th>RRQ</th>
             <th>PSV</th>
             <th>Location</th>
+            <th>Héritage</th>
             <th>Travail</th>
             <th>Impôts</th>
             <th>Revenu net</th>
@@ -900,6 +901,7 @@ function projeterRetraite(inp) {
     pensionBData=null, rrqB_montant=0, ageRRQB=65, psvB_montant=0, agePSVB=65,
     nonEnregistre_solde=0,
     revenuLocation=0, indexationLocation=0.02,
+    heritages=[],
     budgetRetraite=80000,
     budgetSlowgo=null,
     budgetNogo=null,
@@ -1018,6 +1020,15 @@ function projeterRetraite(inp) {
 
     const ferrA = retraitFERR(st.reerA, ageA);
     const ferrB = couple ? retraitFERR(st.reerB, ageB) : 0;
+
+    // --- Héritage — injection unique l'année correspondante ---
+    const heritageAnnee = (heritages || []).reduce(function(sum, h) {
+      return h.annee === annee ? sum + (parseFloat(h.montant) || 0) : sum;
+    }, 0);
+    // L'héritage est ajouté directement au capital (non enregistré), pas au revenu imposable
+    if (heritageAnnee > 0) {
+      st.nonEnreg += heritageAnnee;
+    }
 
     // --- Revenus bruts ---
     const revPensions = st.pensionA + st.pensionB;
@@ -1144,6 +1155,7 @@ function projeterRetraite(inp) {
       pensionA: st.pensionA, pensionB: st.pensionB,
       rrq: st.rrq, psv: st.psv,
       location: st.revLoc,
+      heritage: heritageAnnee || 0,
       travail: revTravail,
       revBrut, impots: impots.total, revNet,
       depenses: enRetraite ? depenses : 0,
@@ -1195,6 +1207,7 @@ let APP = {
     reee_solde: 0,
     reee_etudes: 0,
     revenuLocation: 0, indexationLocation: 0.02,
+    heritages: [], // [{annee, montant, description}]
     inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
     augmentationSalaire: 0,
     strategieDecaissement: 'reer_first',
@@ -1281,6 +1294,8 @@ function confirmerReset() {
       nonEnregistreA_solde: 0, nonEnregistreB_solde: 0,
       reee_solde: 0, reee_etudes: 0,
       revenuLocation: 0, indexationLocation: 0.02,
+      heritages: [],
+    heritages: [], // [{annee, montant, description}]
       inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
       augmentationSalaire: 0, strategieDecaissement: 'reer_first',
       budgetRetraite: 0, budgetSlowgo: 0, budgetNogo: 0,
@@ -1973,10 +1988,54 @@ function renderDonneesTab(tab) {
       break;
     }
 
-    case 'hypotheses':
+    case 'hypotheses': {
+      const heritages = inp.heritages || [];
+      // Build heritages list using DOM to avoid string quoting issues
+      function buildHeritagesList(hList, inpData) {
+        if (hList.length === 0) {
+          return '<div style="color:var(--text3); font-size:13px; padding:8px 0;">Aucun héritage configuré.</div>';
+        }
+        return hList.map(function(h, i) {
+          const ageA = h.annee - inpData.anneeNaissanceA;
+          const ageB = h.annee - inpData.anneeNaissanceB;
+          const row = document.createElement('div');
+          row.style.cssText = 'display:grid; grid-template-columns:1fr 140px 140px auto; gap:10px; align-items:end; padding:8px 0; border-bottom:1px solid var(--border);';
+          // Description
+          const fg1 = document.createElement('div'); fg1.className = 'form-group'; fg1.style.margin = '0';
+          const l1 = document.createElement('label'); l1.className = 'form-label'; l1.textContent = 'Description';
+          const i1 = document.createElement('input'); i1.type = 'text'; i1.className = 'form-input';
+          i1.value = h.description || ''; i1.placeholder = 'Ex: Héritage parental';
+          i1.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'description',this.value); }; })(i));
+          fg1.appendChild(l1); fg1.appendChild(i1);
+          // Année
+          const fg2 = document.createElement('div'); fg2.className = 'form-group'; fg2.style.margin = '0';
+          const l2 = document.createElement('label'); l2.className = 'form-label'; l2.textContent = 'Année';
+          const i2 = document.createElement('input'); i2.type = 'number'; i2.className = 'form-input';
+          i2.value = h.annee; i2.min = '2026'; i2.max = '2090';
+          i2.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'annee',parseInt(this.value)||2050); }; })(i));
+          const h2 = document.createElement('div'); h2.className = 'form-hint';
+          h2.textContent = inpData.prenomA + ': ' + ageA + ' ans | ' + inpData.prenomB + ': ' + ageB + ' ans';
+          fg2.appendChild(l2); fg2.appendChild(i2); fg2.appendChild(h2);
+          // Montant
+          const fg3 = document.createElement('div'); fg3.className = 'form-group'; fg3.style.margin = '0';
+          const l3 = document.createElement('label'); l3.className = 'form-label'; l3.textContent = 'Montant net ($)';
+          const i3 = document.createElement('input'); i3.type = 'number'; i3.className = 'form-input';
+          i3.value = h.montant;
+          i3.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'montant',parseFloat(this.value)||0); }; })(i));
+          const h3 = document.createElement('div'); h3.className = 'form-hint'; h3.textContent = 'Montant net après impôts succession';
+          fg3.appendChild(l3); fg3.appendChild(i3); fg3.appendChild(h3);
+          // Delete
+          const db = document.createElement('button'); db.className = 'del-btn'; db.style.marginBottom = '2px'; db.textContent = '×';
+          db.addEventListener('click', (function(n){ return function(){ supprimerHeritage(n); }; })(i));
+          row.appendChild(fg1); row.appendChild(fg2); row.appendChild(fg3); row.appendChild(db);
+          return row.outerHTML;
+        }).join('');
+      }
+      const heritagesHTML = buildHeritagesList(heritages, inp);
+
       c.innerHTML = `
         <div class="page-title" style="margin-bottom:20px;">Hypothèses de calcul</div>
-        <div class="card">
+        <div class="card" style="margin-bottom:16px;">
           <div class="card-title"><div class="dot"></div>Rendements & inflation</div>
           <div class="grid grid-3" style="gap:16px;">
             <div class="form-group">
@@ -1989,7 +2048,7 @@ function renderDonneesTab(tab) {
               <label class="form-label">Rendement — phase retraite (%)</label>
               <input type="number" class="form-input" step="0.5" value="${(inp.rendementRetraite*100).toFixed(1)}"
                 oninput="setInp('rendementRetraite',parseFloat(this.value)/100)">
-              <div class="form-hint">Plus conservateur: 4–5%</div>
+              <div class="form-hint">Conservateur: 3–4% | Modéré: 4–5%</div>
             </div>
             <div class="form-group">
               <label class="form-label">Inflation annuelle (%)</label>
@@ -2003,8 +2062,23 @@ function renderDonneesTab(tab) {
                 oninput="setInp('augmentationSalaire',parseFloat(this.value)/100)">
             </div>
           </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--amber)"></div>Héritages & revenus exceptionnels
+            <span class="badge badge-gold" style="margin-left:8px; font-size:10px;">optionnel</span>
+          </div>
+          <div class="alert alert-info" style="margin-bottom:16px; font-size:12px;">
+            💡 Chaque héritage est ajouté directement au capital non enregistré l'année indiquée — sans impact fiscal immédiat dans le modèle
+            (conservateur: en réalité, selon la source, il peut y avoir des impôts à la succession).
+            Utilisez le montant <strong>net</strong> que vous estimez réellement recevoir.
+          </div>
+          <div id="heritages-list">${heritagesHTML}</div>
+          <button class="btn-sm" onclick="ajouterHeritage()" style="margin-top:12px; color:var(--amber); border-color:rgba(240,160,48,0.3);">
+            + Ajouter un héritage / revenu exceptionnel
+          </button>
         </div>`;
       break;
+    }
   }
 }
 
@@ -2262,6 +2336,32 @@ function renderPSVCard(prenom, ab, psvData, psv65, psv70) {
 // ============================================================
 // INPUT HELPERS
 // ============================================================
+function ajouterHeritage() {
+  if (!APP.inputs.heritages) APP.inputs.heritages = [];
+  const anneeDefaut = Math.max(2026, (APP.inputs.anneeRetraiteA || 2029) + 20);
+  APP.inputs.heritages.push({ annee: anneeDefaut, montant: 200000, description: 'Héritage potentiel' });
+  saveData();
+  renderDonneesTab('hypotheses');
+}
+
+function supprimerHeritage(idx) {
+  if (!APP.inputs.heritages) return;
+  APP.inputs.heritages.splice(idx, 1);
+  saveData();
+  renderDonneesTab('hypotheses');
+}
+
+function updateHeritage(idx, field, val) {
+  if (!APP.inputs.heritages || !APP.inputs.heritages[idx]) return;
+  APP.inputs.heritages[idx][field] = val;
+  // Debounced save to not interrupt typing
+  clearTimeout(window._heritageSaveTimer);
+  window._heritageSaveTimer = setTimeout(function() {
+    saveData();
+    renderDonneesTab('hypotheses');
+  }, 600);
+}
+
 function setInp(key, val) {
   APP.inputs[key] = val;
   // Keep nonEnregistre_solde in sync with A+B split
@@ -2497,6 +2597,7 @@ function recalculerTout() {
     nonEnregistre_solde: (inp.nonEnregistreA_solde||0) + (inp.nonEnregistreB_solde||0) +
       Math.max(0, (inp.reee_solde||0) - (inp.reee_etudes||0)),
     revenuLocation: inp.revenuLocation, indexationLocation: inp.indexationLocation,
+    heritages: inp.heritages || [],
     budgetRetraite: APP.inputs.budgetRetraite,
     budgetSlowgo: APP.inputs.budgetSlowgo,
     budgetNogo: APP.inputs.budgetNogo,
@@ -2581,6 +2682,10 @@ function renderResultats() {
     if (APP.chartCapital) { APP.chartCapital.destroy(); APP.chartCapital = null; }
     const canvasC = document.getElementById('chart-capital');
     if (canvasC) {
+      // Mark heritage years with a point
+      const heritageYears = (inp.heritages || []).map(function(h){ return h.annee; });
+      const pointRadii = lignes.map(function(l){ return heritageYears.indexOf(l.annee) >= 0 ? 6 : 0; });
+      const pointColors = lignes.map(function(l){ return heritageYears.indexOf(l.annee) >= 0 ? '#f0a030' : '#c9a84c'; });
       APP.chartCapital = new Chart(canvasC.getContext('2d'), {
         type: 'line',
         data: {
@@ -2590,7 +2695,10 @@ function renderResultats() {
             data: capitalData,
             borderColor: '#c9a84c',
             backgroundColor: 'rgba(201,168,76,0.08)',
-            fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2,
+            fill: true, tension: 0.3,
+            pointRadius: pointRadii,
+            pointBackgroundColor: pointColors,
+            borderWidth: 2,
           }]
         },
         options: {
@@ -2680,6 +2788,7 @@ function filtrerDetails() {
       <td class="${l.rrq>0?'positive':''}">${l.rrq>0?fmtK(l.rrq):'—'}</td>
       <td class="${l.psv>0?'positive':''}">${l.psv>0?fmtK(l.psv):'—'}</td>
       <td>${l.location>0?fmtK(l.location):'—'}</td>
+      <td class="${(l.heritage||0)>0?'gold':''}">${(l.heritage||0)>0?fmtK(l.heritage):'—'}</td>
       <td>${l.travail>0?fmtK(l.travail):'—'}</td>
       <td class="negative">${l.impots>0?fmtK(l.impots):'—'}</td>
       <td>${fmtK(l.revNet)}</td>
