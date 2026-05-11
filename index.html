@@ -512,19 +512,28 @@ body {
           <div class="stat-value" id="sidebar-mensuel" style="font-size:20px;">—</div>
         </div>
       </div>
-      <div class="sidebar-section">Hypothèque / Auto</div>
+      <div class="sidebar-section">Hypothèque</div>
       <div style="padding: 4px 12px;">
         <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label">Paiement hypothèque/auto actuel ($/mois)</label>
+          <label class="form-label">Paiement mensuel ($)</label>
           <input type="number" class="form-input" id="hypo-paiement" value="2233" oninput="updateHypo()">
         </div>
         <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label">Fin hypothèque (année)</label>
+          <label class="form-label">Payée en (année)</label>
           <input type="number" class="form-input" id="hypo-fin" value="2037" oninput="updateHypo()">
         </div>
-        <div class="form-group">
-          <label class="form-label">Voiture: coût mensuel remplacement</label>
-          <input type="number" class="form-input" id="auto-mensuel" value="833" oninput="updateHypo()">
+        <div class="form-group" style="margin-bottom:6px;">
+          <label class="form-label">Surplus vs budget moyen/an</label>
+          <div class="stat-value" id="hypo-surplus" style="font-size:14px; color:var(--coral); padding:6px 0;">—</div>
+          <div style="font-size:10px; color:var(--text3);">Ajouté au budget jusqu'en <span id="hypo-fin-label">2037</span></div>
+        </div>
+      </div>
+      <div class="sidebar-section">Voiture</div>
+      <div style="padding: 4px 12px;">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Provision remplacement ($/mois)</label>
+          <input type="number" class="form-input" id="auto-mensuel" value="365" oninput="updateHypo()">
+          <div style="font-size:10px; color:var(--text3); margin-top:3px;">Ex: 35 000$ ÷ 8 ans ÷ 12 = 365$/mois</div>
         </div>
         <div style="margin-top:12px; padding:10px; background:var(--bg3); border-radius:var(--radius-sm);">
           <div class="stat-label">Moyenne calculée/mois</div>
@@ -1267,7 +1276,7 @@ let APP = {
 
 const DEFAULT_BUDGET = [
   { cat: 'Habitation', items: [
-    { nom: 'Hypothèque / voiture (moyenne)', mensuel: 727 },
+    { nom: 'Hypothèque', mensuel: 0 },
     { nom: 'Assurance habitation', mensuel: 125 },
     { nom: 'Taxes municipales/scolaires', mensuel: 350 },
     { nom: 'Mobilier, déco & rénos', mensuel: 200 },
@@ -1278,6 +1287,7 @@ const DEFAULT_BUDGET = [
     { nom: 'Restaurants', mensuel: 300 },
   ]},
   { cat: 'Transport', items: [
+    { nom: 'Financement / remplacement voiture', mensuel: 365 },
     { nom: 'Essence', mensuel: 350 },
     { nom: 'Entretien', mensuel: 80 },
     { nom: 'Assurances auto', mensuel: 100 },
@@ -1629,31 +1639,30 @@ function ajouterCategorie() {
 function updateHypo() {
   const paiement = parseFloat(document.getElementById('hypo-paiement').value) || 0;
   const fin = parseInt(document.getElementById('hypo-fin').value) || 2037;
-  const auto = parseFloat(document.getElementById('auto-mensuel').value) || 0;
-  const anneesAvecHypo = Math.max(0, fin - 2026);
-  const anneesTotal = 40;
-  const moyenne = (paiement * anneesAvecHypo + auto * (anneesTotal - anneesAvecHypo)) / anneesTotal;
-  // Surplus mensuel pendant la période hypothèque vs la moyenne lissée
-  const surplusMensuel = Math.max(0, paiement - moyenne);
-  const surplusAnnuel = surplusMensuel * 12;
+  const autoProvision = parseFloat(document.getElementById('auto-mensuel').value) || 0;
 
-  document.getElementById('hypo-moyenne').textContent = fmt(moyenne) + '/mois';
+  // Surplus annuel = (paiement hypothèque - provision voiture) × 12, compté jusqu'en fin
+  // Le budget Go-Go inclut déjà la provision voiture comme ligne Transport séparée
+  // L'hypothèque est en plus jusqu'en fin, puis disparaît
+  const surplusAnnuel = paiement * 12; // hypothèque complète = surplus vs sans hypothèque
+  // Mais vs le budget de base (qui utilise la provision auto seule), le surplus est :
+  // paiement hypothèque seulement, car provision auto est déjà dans le budget Transport
 
-  // Afficher le surplus
+  // Store in inputs
+  APP.inputs.anneeFinHypotheque = fin;
+  APP.inputs.surplusHypotheque = surplusAnnuel; // montant annuel hypothèque ajouté jusqu'en fin
+
+  // Display
   const surplusEl = document.getElementById('hypo-surplus');
   const finLabelEl = document.getElementById('hypo-fin-label');
-  if (surplusEl) surplusEl.textContent = surplusMensuel > 0 ? fmt(surplusAnnuel) + '/an' : 'Aucun surplus';
+  if (surplusEl) surplusEl.textContent = paiement > 0 ? '+' + fmt(surplusAnnuel) + '/an' : 'Aucun';
   if (finLabelEl) finLabelEl.textContent = fin;
 
-  // Stocker dans inputs pour la projection
-  APP.inputs.anneeFinHypotheque = fin;
-  APP.inputs.surplusHypotheque = surplusAnnuel;
+  // Update "Moyenne calculée/mois" display (now just shows hypo amount)
+  const moyenneEl = document.getElementById('hypo-moyenne');
+  if (moyenneEl) moyenneEl.textContent = fmt(paiement) + '/mois jusqu’en ' + fin;
 
-  // Mettre à jour le premier item habitation avec la MOYENNE (pas le paiement actuel)
-  if (APP.budget[APP.phase]?.[0]?.items?.[0]) {
-    APP.budget[APP.phase][0].items[0].mensuel = Math.round(moyenne);
-    saveData(); renderBudget();
-  }
+  saveData();
 }
 
 // ============================================================
