@@ -484,10 +484,10 @@ body {
     <div class="sidebar">
       <div class="sidebar-section">Phases</div>
       <div style="padding:4px 12px 8px;font-size:11px;color:var(--text3);line-height:1.5;">
-        Pivot sur l'âge de MJ:<br>
+        Pivot sur l'âge de B:<br>
         <span style="color:var(--gold);">Pré-65</span> = dès la retraite<br>
-        <span style="color:var(--gold);">Post-65</span> = 65 ans MJ<br>
-        <span style="color:var(--gold);">Slow-Go</span> = 70 ans MJ
+        <span style="color:var(--gold);">Post-65</span> = 65 ans B<br>
+        <span style="color:var(--gold);">Slow-Go</span> = 70 ans B
       </div>
       <div class="sidebar-item active" onclick="setPhase('gogo',this)">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -1055,10 +1055,10 @@ function projeterRetraite(inp) {
     }
     if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
 
-    // Budget selon la phase — pivots basés sur l'âge de MJ (conjoint B)
-    // Phase 1 (gogo): Retraite → 65 ans MJ (pré-pension)
-    // Phase 2 (slowgo): 65 ans MJ → 70 ans MJ (Go-Go post-65, avec pension Intact)
-    // Phase 3 (nogo): 70 ans MJ+ (Slow-Go / No-Go)
+    // Budget selon la phase — pivots basés sur l'âge de B (conjoint B)
+    // Phase 1 (gogo): Retraite → 65 ans B (pré-pension)
+    // Phase 2 (slowgo): 65 ans B → 70 ans B (Go-Go post-65, avec pension Intact)
+    // Phase 3 (nogo): 70 ans B+ (Slow-Go / No-Go)
     const agePivot = couple ? ageB : ageA; // pivot sur MJ si couple
     let budgetPhase = enRetraite
       ? (agePivot >= 70 && budgetNogo ? budgetNogo
@@ -1237,28 +1237,28 @@ let APP = {
   budget: { gogo: [], slowgo: [], nogo: [] },
   inputs: {
     anneeCalc: 2026,
-    prenomA: 'Félix', anneeNaissanceA: 1981, anneeRetraiteA: 2027,
-    reerA_solde: 350000, celiA_solde: 80000, droitsReerA: 50000, droitsCeliA: 15000,
-    epargneAnnuelleA: 30000, pctReerA: 0.18, salaireBrutA: 160000,
-    pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
-      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2027,
-      ageRetraite: 46, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
-      indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
-      ageDebutDecaissement: 65 },
-    rrqA: { revenusCotisesMoyens: 80000, ageDemandeRRQ: 65 },
-    psvA: { ageDemande: 65 },
-    prenomB: 'MJ', anneeNaissanceB: 1984, anneeRetraiteB: 2034,
-    reerB_solde: 120000, celiB_solde: 60000, droitsReerB: 30000, droitsCeliB: 10000,
-    epargneAnnuelleB: 20000, pctReerB: 0.05, salaireBrutB: 110000,
-    pensionB: { active: true, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
-      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2034,
+    prenomA: 'Conjoint A', anneeNaissanceA: 1980, anneeRetraiteA: 2030,
+    reerA_solde: 0, celiA_solde: 0, droitsReerA: 0, droitsCeliA: 0,
+    epargneAnnuelleA: 0, pctReerA: 0.18, salaireBrutA: 0,
+    pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.015,
+      anneesServiceActuel: 0, salaire: 0, anneeRetraite: 2030,
       ageRetraite: 50, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
       indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
       ageDebutDecaissement: 65 },
-    rrqB: { revenusCotisesMoyens: 60000, ageDemandeRRQ: 65 },
+    rrqA: { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 },
+    psvA: { ageDemande: 65 },
+    prenomB: 'Conjoint B', anneeNaissanceB: 1983, anneeRetraiteB: 2033,
+    reerB_solde: 0, celiB_solde: 0, droitsReerB: 0, droitsCeliB: 0,
+    epargneAnnuelleB: 0, pctReerB: 0.05, salaireBrutB: 0,
+    pensionB: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.015,
+      anneesServiceActuel: 0, salaire: 0, anneeRetraite: 2033,
+      ageRetraite: 50, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+      indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
+      ageDebutDecaissement: 65 },
+    rrqB: { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 },
     psvB: { ageDemande: 65 },
-    nonEnregistreA_solde: 25000,
-    nonEnregistreB_solde: 25000,
+    nonEnregistreA_solde: 0,
+    nonEnregistreB_solde: 0,
     reee_solde: 0,
     reee_etudes: 0,
     revenuLocation: 0, indexationLocation: 0.02,
@@ -1529,7 +1529,7 @@ function setPhase(phase, sidebarEl, tabEl, fromPinned) {
   if (pinnedBtn) pinnedBtn.classList.add('active');
   // Sync sidebar
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-  const labels = { gogo: 'Phase Retraite pré-65 (jusqu’à 65 ans MJ)', slowgo: 'Phase Go-Go post-65 (65–70 ans MJ)', nogo: 'Phase Slow-Go / No-Go (70+ ans MJ)' };
+  const labels = { gogo: 'Phase Retraite pré-65 (jusqu’à 65 ans B)', slowgo: 'Phase Go-Go post-65 (65–70 ans B)', nogo: 'Phase Slow-Go / No-Go (70+ ans B)' };
   const lbl = document.getElementById('phase-label');
   if (lbl) lbl.textContent = labels[phase];
   renderBudget();
@@ -2651,7 +2651,7 @@ function setInp(key, val) {
     const a = APP.inputs.prenomA || 'A';
     const b = APP.inputs.prenomB || 'B';
     const el = document.getElementById('nav-brand');
-    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' & ' + b + '</span>';
+    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' &amp; ' + b + '</span>';
   }
 }
 
@@ -3142,7 +3142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const a = APP.inputs.prenomA || 'A';
     const b = APP.inputs.prenomB || 'B';
     const el = document.getElementById('nav-brand');
-    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' & ' + b + '</span>';
+    if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' &amp; ' + b + '</span>';
   }
   updateNavBrand();
   renderBudget();
