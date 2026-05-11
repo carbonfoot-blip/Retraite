@@ -524,6 +524,11 @@ body {
           <div class="stat-label">Moyenne calculée/mois</div>
           <div class="stat-value" id="hypo-moyenne" style="font-size:16px; color:var(--teal);">—</div>
         </div>
+        <div style="margin-top:10px; padding:10px; background:rgba(232,101,74,0.08); border:1px solid rgba(232,101,74,0.2); border-radius:var(--radius-sm);">
+          <div class="stat-label" style="color:var(--coral);">Surplus avant fin hypothèque</div>
+          <div class="stat-value" id="hypo-surplus" style="font-size:16px; color:var(--coral);">—</div>
+          <div style="font-size:10px; color:var(--text3); margin-top:4px;">Ajouté au budget Go-Go jusqu'en <span id="hypo-fin-label">—</span></div>
+        </div>
       </div>
     </div>
     <div class="main-content">
@@ -932,6 +937,8 @@ function projeterRetraite(inp) {
     budgetSlowgo=null,
     budgetNogo=null,
     anneeDeuxiemeRetraite=2026,
+    anneeFinHypotheque=0,
+    surplusHypotheque=0,
     inflation=0.025, rendementAccumulation=0.06, rendementRetraite=0.045,
     augmentationSalaire=0,
     strategieDecaissement='reer_first',
@@ -1033,13 +1040,19 @@ function projeterRetraite(inp) {
     }
     if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
 
-    // Budget selon la phase: Go-Go dès la retraite, Slow-Go à 70 ans A, No-Go à 80 ans A
-    const agePivot = ageA; // on base les phases sur l'âge du conjoint A
-    const budgetBase = enRetraite
+    // Budget selon la phase et la période hypothèque
+    // budgetTransition: montant Go-Go AVANT que l'hypothèque soit payée
+    // budgetRetraite: montant Go-Go APRÈS hypothèque payée (la moyenne actuelle)
+    const agePivot = ageA;
+    let budgetPhase = enRetraite
       ? (agePivot >= 80 && budgetNogo ? budgetNogo
         : agePivot >= 70 && budgetSlowgo ? budgetSlowgo
         : budgetRetraite)
       : 0;
+    // Ajustement pour période hypothèque: si annee < anneeFinHypotheque, ajouter le surplus
+    const budgetBase = (enRetraite && anneeFinHypotheque > 0 && annee < anneeFinHypotheque && surplusHypotheque > 0)
+      ? budgetPhase + surplusHypotheque * Math.pow(1 + (inflation || 0.025), annee - anneeCalc)
+      : budgetPhase;
     const depenses = budgetBase * Math.pow(1 + (inflation || 0.025), annee - anneeCalc);
     const rendement = enRetraite ? (rendementRetraite || 0.045) : (rendementAccumulation || 0.06);
     const capitalDebut = Math.max(0, st.reerA + st.reerB + st.celiA + st.celiB + st.nonEnreg);
@@ -1208,32 +1221,33 @@ let APP = {
   budget: { gogo: [], slowgo: [], nogo: [] },
   inputs: {
     anneeCalc: 2026,
-    prenomA: 'A', anneeNaissanceA: 1980, anneeRetraiteA: 2045,
-    reerA_solde: 0, celiA_solde: 0, droitsReerA: 0, droitsCeliA: 0,
-    epargneAnnuelleA: 0, pctReerA: 0.18, salaireBrutA: 0,
+    prenomA: 'Félix', anneeNaissanceA: 1981, anneeRetraiteA: 2027,
+    reerA_solde: 350000, celiA_solde: 80000, droitsReerA: 50000, droitsCeliA: 15000,
+    epargneAnnuelleA: 30000, pctReerA: 0.18, salaireBrutA: 160000,
     pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
-      anneesServiceActuel: 0, salaire: 0, anneeRetraite: 2045,
-      ageRetraite: 65, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2027,
+      ageRetraite: 46, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
       indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
       ageDebutDecaissement: 65 },
     rrqA: { revenusCotisesMoyens: 80000, ageDemandeRRQ: 65 },
     psvA: { ageDemande: 65 },
-    prenomB: 'B', anneeNaissanceB: 1980, anneeRetraiteB: 2050,
-    reerB_solde: 0, celiB_solde: 0, droitsReerB: 0, droitsCeliB: 0,
+    prenomB: 'MJ', anneeNaissanceB: 1984, anneeRetraiteB: 2034,
+    reerB_solde: 120000, celiB_solde: 60000, droitsReerB: 30000, droitsCeliB: 10000,
     epargneAnnuelleB: 20000, pctReerB: 0.05, salaireBrutB: 110000,
     pensionB: { active: true, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
-      anneesServiceActuel: 13, salaire: 0, anneeRetraite: 2050,
-      ageRetraite: 65, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
+      anneesServiceActuel: 13, salaire: 110000, anneeRetraite: 2034,
+      ageRetraite: 50, ageSansPenalite: 61, tauxReductionAnnuel: 0.06,
       indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false,
       ageDebutDecaissement: 65 },
     rrqB: { revenusCotisesMoyens: 60000, ageDemandeRRQ: 65 },
     psvB: { ageDemande: 65 },
-    nonEnregistreA_solde: 0,
-    nonEnregistreB_solde: 0,
+    nonEnregistreA_solde: 25000,
+    nonEnregistreB_solde: 25000,
     reee_solde: 0,
     reee_etudes: 0,
     revenuLocation: 0, indexationLocation: 0.02,
     heritages: [], // [{annee, montant, description}]
+    anneeFinHypotheque: 2037, surplusHypotheque: 0,
     inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
     augmentationSalaire: 0,
     strategieDecaissement: 'reer_first',
@@ -1246,46 +1260,46 @@ let APP = {
 
 const DEFAULT_BUDGET = [
   { cat: 'Habitation', items: [
-    { nom: 'Hypothèque / voiture (moyenne)', mensuel: 0 },
-    { nom: 'Assurance habitation', mensuel: 0 },
-    { nom: 'Taxes municipales/scolaires', mensuel: 0 },
-    { nom: 'Mobilier, déco & rénos', mensuel: 0 },
+    { nom: 'Hypothèque / voiture (moyenne)', mensuel: 727 },
+    { nom: 'Assurance habitation', mensuel: 125 },
+    { nom: 'Taxes municipales/scolaires', mensuel: 350 },
+    { nom: 'Mobilier, déco & rénos', mensuel: 200 },
   ]},
   { cat: 'Alimentation', items: [
-    { nom: 'Épicerie', mensuel: 0 },
-    { nom: 'Bière & SAQ', mensuel: 0 },
-    { nom: 'Restaurants', mensuel: 0 },
+    { nom: 'Épicerie', mensuel: 1000 },
+    { nom: 'Bière & SAQ', mensuel: 125 },
+    { nom: 'Restaurants', mensuel: 300 },
   ]},
   { cat: 'Transport', items: [
-    { nom: 'Essence', mensuel: 0 },
-    { nom: 'Entretien', mensuel: 0 },
-    { nom: 'Assurances auto', mensuel: 0 },
+    { nom: 'Essence', mensuel: 350 },
+    { nom: 'Entretien', mensuel: 80 },
+    { nom: 'Assurances auto', mensuel: 100 },
   ]},
   { cat: 'Factures', items: [
-    { nom: 'Bell (télé/internet)', mensuel: 0 },
-    { nom: 'Hydro-Québec', mensuel: 0 },
-    { nom: 'Streaming', mensuel: 0 },
+    { nom: 'Bell (télé/internet)', mensuel: 200 },
+    { nom: 'Hydro-Québec', mensuel: 150 },
+    { nom: 'Streaming', mensuel: 28 },
   ]},
   { cat: 'Shopping', items: [
-    { nom: 'Coiffeur & soins', mensuel: 0 },
-    { nom: 'Amazon / maison', mensuel: 0 },
+    { nom: 'Coiffeur & soins', mensuel: 100 },
+    { nom: 'Amazon / maison', mensuel: 200 },
   ]},
   { cat: 'Loisirs', items: [
-    { nom: 'Sports été', mensuel: 0 },
-    { nom: 'Ski', mensuel: 0 },
+    { nom: 'Sports été', mensuel: 400 },
+    { nom: 'Ski', mensuel: 400 },
   ]},
   { cat: 'Santé', items: [
-    { nom: 'Médicaments', mensuel: 0 },
-    { nom: 'Dentiste', mensuel: 0 },
-    { nom: 'Assurance médicale privée', mensuel: 0 },
-    { nom: 'Optométriste / lunettes', mensuel: 0 },
+    { nom: 'Médicaments', mensuel: 50 },
+    { nom: 'Dentiste', mensuel: 100 },
+    { nom: 'Assurance médicale privée', mensuel: 400 },
+    { nom: 'Optométriste / lunettes', mensuel: 100 },
   ]},
   { cat: 'Voyages', items: [
-    { nom: 'Voyage été', mensuel: 0 },
-    { nom: 'Voyage hiver', mensuel: 0 },
+    { nom: 'Voyage été', mensuel: 400 },
+    { nom: 'Voyage hiver', mensuel: 400 },
   ]},
   { cat: 'Autres', items: [
-    { nom: 'Fond de prévoyance', mensuel: 0 },
+    { nom: 'Fond de prévoyance', mensuel: 500 },
   ]},
 ];
 
@@ -1301,7 +1315,7 @@ function confirmerReset() {
     // Reset inputs to defaults
     APP.inputs = {
       anneeCalc: 2026,
-      prenomA: 'Conjoint A', anneeNaissanceA: 1980, anneeRetraiteA: 2045,
+      prenomA: 'Conjoint A', anneeNaissanceA: 1981, anneeRetraiteA: 2027,
       reerA_solde: 0, celiA_solde: 0, droitsReerA: 0, droitsCeliA: 0,
       epargneAnnuelleA: 0, pctReerA: 0.18, salaireBrutA: 0,
       pensionA: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
@@ -1309,7 +1323,7 @@ function confirmerReset() {
         indexationReport: 0.02, indexationRente: 0.02, coordRRQ: false, ageDebutDecaissement: 65 },
       rrqA: { revenusCotisesMoyens: 0, ageDemandeRRQ: 65 },
       psvA: { ageDemande: 65 },
-      prenomB: 'Conjoint B', anneeNaissanceB: 1980, anneeRetraiteB: 2045,
+      prenomB: 'Conjoint B', anneeNaissanceB: 1984, anneeRetraiteB: 2030,
       reerB_solde: 0, celiB_solde: 0, droitsReerB: 0, droitsCeliB: 0,
       epargneAnnuelleB: 0, pctReerB: 0.05, salaireBrutB: 0,
       pensionB: { active: false, typeRegime: 'pd_prive', tauxAccumulation: 0.01,
@@ -1322,6 +1336,7 @@ function confirmerReset() {
       revenuLocation: 0, indexationLocation: 0.02,
       heritages: [],
     heritages: [], // [{annee, montant, description}]
+    anneeFinHypotheque: 2037, surplusHypotheque: 0,
       inflation: 0.025, rendementAccumulation: 0.06, rendementRetraite: 0.045,
       augmentationSalaire: 0, strategieDecaissement: 'reer_first',
       budgetRetraite: 0, budgetSlowgo: 0, budgetNogo: 0,
@@ -1603,8 +1618,23 @@ function updateHypo() {
   const anneesAvecHypo = Math.max(0, fin - 2026);
   const anneesTotal = 40;
   const moyenne = (paiement * anneesAvecHypo + auto * (anneesTotal - anneesAvecHypo)) / anneesTotal;
+  // Surplus mensuel pendant la période hypothèque vs la moyenne lissée
+  const surplusMensuel = Math.max(0, paiement - moyenne);
+  const surplusAnnuel = surplusMensuel * 12;
+
   document.getElementById('hypo-moyenne').textContent = fmt(moyenne) + '/mois';
-  // Mettre à jour le premier item habitation
+
+  // Afficher le surplus
+  const surplusEl = document.getElementById('hypo-surplus');
+  const finLabelEl = document.getElementById('hypo-fin-label');
+  if (surplusEl) surplusEl.textContent = surplusMensuel > 0 ? fmt(surplusAnnuel) + '/an' : 'Aucun surplus';
+  if (finLabelEl) finLabelEl.textContent = fin;
+
+  // Stocker dans inputs pour la projection
+  APP.inputs.anneeFinHypotheque = fin;
+  APP.inputs.surplusHypotheque = surplusAnnuel;
+
+  // Mettre à jour le premier item habitation avec la MOYENNE (pas le paiement actuel)
   if (APP.budget[APP.phase]?.[0]?.items?.[0]) {
     APP.budget[APP.phase][0].items[0].mensuel = Math.round(moyenne);
     saveData(); renderBudget();
@@ -2828,6 +2858,8 @@ function recalculerTout() {
     budgetSlowgo: APP.inputs.budgetSlowgo,
     budgetNogo: APP.inputs.budgetNogo,
     anneeDeuxiemeRetraite: Math.max(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA),
+    anneeFinHypotheque: inp.anneeFinHypotheque || 0,
+    surplusHypotheque: inp.surplusHypotheque || 0,
     inflation: inp.inflation, rendementAccumulation: inp.rendementAccumulation,
     rendementRetraite: inp.rendementRetraite, augmentationSalaire: inp.augmentationSalaire,
     strategieDecaissement: inp.strategieDecaissement,
@@ -2863,9 +2895,12 @@ function renderResultats() {
     // Stats
     const anneeDeuxiemeRetraite = Math.max(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA);
     const anneePremiereRetraite = Math.min(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA);
-    const ligneRetraite = lignes.find(function(l){ return l.annee === anneeDeuxiemeRetraite + 1; }) ||
-                          lignes.find(function(l){ return l.annee === anneeDeuxiemeRetraite; }) ||
-                          lignes.find(function(l){ return l.enRetraite; });
+    // Find steady-state retirement year: first year where both retired AND govt income active
+    // (RRQ or PSV kicks in) — avoids showing 0 during early retirement accumulation phase
+    const ligneRetraite = lignes.find(function(l){
+      return l.enRetraite && (l.rrq > 0 || l.psv > 0 || l.pensionA > 0 || l.pensionB > 0);
+    }) || lignes.find(function(l){ return l.annee === anneeDeuxiemeRetraite + 1; }) ||
+         lignes.find(function(l){ return l.enRetraite; });
     const revNetRetraite = ligneRetraite ? (ligneRetraite.revNet || 0) : 0;
     const salaireBrut = (inp.salaireBrutA || 0) + (inp.salaireBrutB || 0);
     const epargne = (inp.epargneAnnuelleA || 0) + (inp.epargneAnnuelleB || 0);
