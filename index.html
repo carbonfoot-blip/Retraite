@@ -483,17 +483,23 @@ body {
   <div class="section-split">
     <div class="sidebar">
       <div class="sidebar-section">Phases</div>
+      <div style="padding:4px 12px 8px;font-size:11px;color:var(--text3);line-height:1.5;">
+        Pivot sur l'âge de MJ:<br>
+        <span style="color:var(--gold);">Pré-65</span> = dès la retraite<br>
+        <span style="color:var(--gold);">Post-65</span> = 65 ans MJ<br>
+        <span style="color:var(--gold);">Slow-Go</span> = 70 ans MJ
+      </div>
       <div class="sidebar-item active" onclick="setPhase('gogo',this)">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Go-Go (55–70 ans)
+        Retraite pré-65
       </div>
       <div class="sidebar-item" onclick="setPhase('slowgo',this)">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        Slow-Go (70–80 ans)
+        Go-Go post-65
       </div>
       <div class="sidebar-item" onclick="setPhase('nogo',this)">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        No-Go (80+ ans)
+        Slow-Go / No-Go
       </div>
       <div class="sidebar-section">Résumé</div>
       <div style="padding: 4px 12px;">
@@ -535,19 +541,19 @@ body {
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
         <div>
           <div class="page-title">Budget Retraite</div>
-          <div class="page-subtitle">Dépenses projetées à la retraite • <span id="phase-label">Phase Go-Go (55–70 ans)</span></div>
+          <div class="page-subtitle">Dépenses projetées à la retraite • <span id="phase-label">Phase Retraite pré-65</span></div>
         </div>
         <div class="phase-tabs">
-          <button class="phase-tab active" onclick="setPhase('gogo',null,this)">Go-Go</button>
-          <button class="phase-tab" onclick="setPhase('slowgo',null,this)">Slow-Go</button>
-          <button class="phase-tab" onclick="setPhase('nogo',null,this)">No-Go</button>
+          <button class="phase-tab active" onclick="setPhase('gogo',null,this)">Retraite pré-65</button>
+          <button class="phase-tab" onclick="setPhase('slowgo',null,this)">Go-Go post-65</button>
+          <button class="phase-tab" onclick="setPhase('nogo',null,this)">Slow-Go / No-Go</button>
         </div>
       </div>
       <!-- Pinned phase bar for mobile — sits above bottom nav -->
       <div class="phase-bar-pinned" id="phase-bar-pinned">
-        <button class="phase-tab active" id="ppb-gogo" onclick="setPhase('gogo',null,null,true)">⚡ Go-Go</button>
-        <button class="phase-tab" id="ppb-slowgo" onclick="setPhase('slowgo',null,null,true)">🕐 Slow-Go</button>
-        <button class="phase-tab" id="ppb-nogo" onclick="setPhase('nogo',null,null,true)">🏠 No-Go</button>
+        <button class="phase-tab active" id="ppb-gogo" onclick="setPhase('gogo',null,null,true)">⚡ Pré-65</button>
+        <button class="phase-tab" id="ppb-slowgo" onclick="setPhase('slowgo',null,null,true)">📈 Post-65</button>
+        <button class="phase-tab" id="ppb-nogo" onclick="setPhase('nogo',null,null,true)">🌙 Slow-Go</button>
       </div>
 
       <div class="card">
@@ -688,9 +694,9 @@ body {
         <select class="form-select" id="filter-details" onchange="filtrerDetails()" style="width:auto;">
           <option value="all">Toutes les années</option>
           <option value="retraite">Retraite seulement</option>
-          <option value="gogo">Phase Go-Go</option>
-          <option value="slowgo">Phase Slow-Go</option>
-          <option value="nogo">Phase No-Go</option>
+          <option value="gogo">Phase Retraite pré-65</option>
+          <option value="slowgo">Phase Go-Go post-65</option>
+          <option value="nogo">Phase Slow-Go/No-Go</option>
         </select>
         <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
       </div>
@@ -1040,13 +1046,14 @@ function projeterRetraite(inp) {
     }
     if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
 
-    // Budget selon la phase et la période hypothèque
-    // budgetTransition: montant Go-Go AVANT que l'hypothèque soit payée
-    // budgetRetraite: montant Go-Go APRÈS hypothèque payée (la moyenne actuelle)
-    const agePivot = ageA;
+    // Budget selon la phase — pivots basés sur l'âge de MJ (conjoint B)
+    // Phase 1 (gogo): Retraite → 65 ans MJ (pré-pension)
+    // Phase 2 (slowgo): 65 ans MJ → 70 ans MJ (Go-Go post-65, avec pension Intact)
+    // Phase 3 (nogo): 70 ans MJ+ (Slow-Go / No-Go)
+    const agePivot = couple ? ageB : ageA; // pivot sur MJ si couple
     let budgetPhase = enRetraite
-      ? (agePivot >= 80 && budgetNogo ? budgetNogo
-        : agePivot >= 70 && budgetSlowgo ? budgetSlowgo
+      ? (agePivot >= 70 && budgetNogo ? budgetNogo
+        : agePivot >= 65 && budgetSlowgo ? budgetSlowgo
         : budgetRetraite)
       : 0;
     // Ajustement pour période hypothèque: si annee < anneeFinHypotheque, ajouter le surplus
@@ -1473,19 +1480,27 @@ function reinitialiserBudget(save=true) {
     slowgo: JSON.parse(JSON.stringify(DEFAULT_BUDGET)).map(cat => ({
       ...cat, items: cat.items.map(item => {
         let m = item.mensuel;
-        if (cat.cat === 'Loisirs') m = Math.round(m * 0.6);
-        if (cat.cat === 'Voyages') m = Math.round(m * 0.7);
-        if (cat.cat === 'Santé') m = Math.round(m * 1.3);
+        // Go-Go post-65: assurance Intact moins chère, médicaments couverts
+        if (cat.cat === 'Santé') {
+          if (item.nom.toLowerCase().includes('assurance')) m = 200; // prime Intact
+          if (item.nom.toLowerCase().includes('médicament')) m = 15; // co-paiement seulement
+        }
+        // Voyages et loisirs similaires (encore actifs)
         return { ...item, mensuel: m };
       })
     })),
     nogo: JSON.parse(JSON.stringify(DEFAULT_BUDGET)).map(cat => ({
       ...cat, items: cat.items.map(item => {
         let m = item.mensuel;
+        // Slow-Go / No-Go: activités réduites, santé augmente
         if (cat.cat === 'Loisirs') m = Math.round(m * 0.2);
         if (cat.cat === 'Voyages') m = Math.round(m * 0.3);
-        if (cat.cat === 'Santé') m = Math.round(m * 1.6);
         if (cat.cat === 'Transport') m = Math.round(m * 0.6);
+        if (cat.cat === 'Santé') {
+          if (item.nom.toLowerCase().includes('assurance')) m = 200;
+          if (item.nom.toLowerCase().includes('médicament')) m = 80; // plus de médicaments
+          if (item.nom.toLowerCase().includes('dentiste')) m = 150;
+        }
         return { ...item, mensuel: m };
       })
     }))
@@ -1504,7 +1519,7 @@ function setPhase(phase, sidebarEl, tabEl, fromPinned) {
   if (pinnedBtn) pinnedBtn.classList.add('active');
   // Sync sidebar
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-  const labels = { gogo: 'Phase Go-Go (55–70 ans)', slowgo: 'Phase Slow-Go (70–80 ans)', nogo: 'Phase No-Go (80+ ans)' };
+  const labels = { gogo: 'Phase Retraite pré-65 (jusqu’à 65 ans MJ)', slowgo: 'Phase Go-Go post-65 (65–70 ans MJ)', nogo: 'Phase Slow-Go / No-Go (70+ ans MJ)' };
   const lbl = document.getElementById('phase-label');
   if (lbl) lbl.textContent = labels[phase];
   renderBudget();
@@ -3026,9 +3041,9 @@ function filtrerDetails() {
   const filtre = document.getElementById('filter-details')?.value || 'all';
   let lignes = allLignes;
   if (filtre === 'retraite') lignes = lignes.filter(l => l.enRetraite);
-  if (filtre === 'gogo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 55 && l.ageA < 70);
-  if (filtre === 'slowgo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 70 && l.ageA < 80);
-  if (filtre === 'nogo') lignes = lignes.filter(l => l.enRetraite && l.ageA >= 80);
+  if (filtre === 'gogo') lignes = lignes.filter(l => l.enRetraite && (l.ageB === '-' ? l.ageA < 65 : l.ageB < 65));
+  if (filtre === 'slowgo') lignes = lignes.filter(l => l.enRetraite && (l.ageB === '-' ? (l.ageA >= 65 && l.ageA < 70) : (l.ageB >= 65 && l.ageB < 70)));
+  if (filtre === 'nogo') lignes = lignes.filter(l => l.enRetraite && (l.ageB === '-' ? l.ageA >= 70 : l.ageB >= 70));
 
   const tbody = document.getElementById('details-tbody');
   if (lignes.length === 0) {
