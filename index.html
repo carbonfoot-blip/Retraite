@@ -1766,7 +1766,7 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">Année de retraite (valeur exacte)</label>
                 <input type="number" class="form-input" value="${inp.anneeRetraiteA}"
-                  oninput="setInp('anneeRetraiteA',parseInt(this.value)); renderDonneesTab('profil')">
+                  oninput="setInpRetraite('A',parseInt(this.value)||2030,this)">
                 <div class="form-hint">Dans ${inp.anneeRetraiteA - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceA + (inp.anneeRetraiteA - anneeCalc)} ans</div>
               </div>
             </div>
@@ -1797,7 +1797,7 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">Année de retraite (valeur exacte)</label>
                 <input type="number" class="form-input" value="${inp.anneeRetraiteB}"
-                  oninput="setInp('anneeRetraiteB',parseInt(this.value)); renderDonneesTab('profil')">
+                  oninput="setInpRetraite('B',parseInt(this.value)||2030,this)">
                 <div class="form-hint">Dans ${inp.anneeRetraiteB - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceB + (inp.anneeRetraiteB - anneeCalc)} ans</div>
               </div>
             </div>
@@ -2769,7 +2769,8 @@ function setPension(key, field, val) {
 function setRRQ(ab, val) {
   APP.inputs['rrq' + ab.toUpperCase()].revenusCotisesMoyens = val;
   saveData();
-  renderDonneesTab('rrq');
+  clearTimeout(window._rrqTimer);
+  window._rrqTimer = setTimeout(function() { renderDonneesTab('rrq'); }, 800);
 }
 
 function setRRQAge(ab, age) {
@@ -2783,7 +2784,8 @@ function setRRQOverride(ab, age, val) {
   if (!APP.inputs[key].overrides) APP.inputs[key].overrides = {};
   APP.inputs[key].overrides[age] = val === '' ? '' : parseFloat(val) || '';
   saveData();
-  renderDonneesTab('rrq');
+  clearTimeout(window._rrqTimer);
+  window._rrqTimer = setTimeout(function() { renderDonneesTab('rrq'); }, 800);
 }
 
 function toggleRRQManuel(ab) {
@@ -2806,7 +2808,8 @@ function setPSVOverride(ab, age, val) {
   if (!APP.inputs[key]) APP.inputs[key] = { ageDemande: 65 };
   APP.inputs[key]['override' + age] = val === '' ? '' : parseFloat(val) || '';
   saveData();
-  renderDonneesTab('psv');
+  clearTimeout(window._psvTimer);
+  window._psvTimer = setTimeout(function() { renderDonneesTab('psv'); }, 800);
 }
 
 function togglePSVManuel(ab) {
