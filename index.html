@@ -407,6 +407,7 @@ body {
   .donnees-tabs-mobile { display: flex; }
   /* Budget: show pinned phase bar */
   .phase-bar-pinned { display: flex; }
+  #budget-mobile-controls { display: block !important; }
   .phase-tabs { display: none; } /* hide inline tabs on mobile */
   /* Add bottom padding so content isn't hidden behind bottom nav */
   .main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
@@ -563,6 +564,37 @@ body {
         <button class="phase-tab active" id="ppb-gogo" onclick="setPhase('gogo',null,null,true)">⚡ Pré-65</button>
         <button class="phase-tab" id="ppb-slowgo" onclick="setPhase('slowgo',null,null,true)">📈 Post-65</button>
         <button class="phase-tab" id="ppb-nogo" onclick="setPhase('nogo',null,null,true)">🌙 Slow-Go</button>
+      </div>
+
+      <!-- Mobile-only: hypothèque & voiture + phase info -->
+      <div id="budget-mobile-controls" style="display:none; margin-bottom:12px;">
+        <div style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+          <button onclick="toggleMobileControls()" style="width:100%; padding:10px 14px; background:transparent; border:none; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+            <span>🏠 Hypothèque &amp; voiture</span>
+            <span id="mobile-controls-arrow" style="color:var(--gold);">▼</span>
+          </button>
+          <div id="mobile-controls-body" style="display:none; padding:12px 14px; border-top:1px solid var(--border);">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+              <div class="form-group">
+                <label class="form-label">Paiement hypothèque ($/mois)</label>
+                <input type="number" class="form-input" id="hypo-paiement-m" inputmode="numeric" value="2233" oninput="syncHypo('paiement',this.value)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payée en (année)</label>
+                <input type="number" class="form-input" id="hypo-fin-m" inputmode="numeric" value="2037" oninput="syncHypo('fin',this.value)">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label">Provision remplacement voiture ($/mois)</label>
+              <input type="number" class="form-input" id="auto-mensuel-m" inputmode="numeric" value="365" oninput="syncHypo('auto',this.value)">
+              <div class="form-hint">Ex: 35 000$ ÷ 8 ans ÷ 12 = 365$/mois</div>
+            </div>
+            <div id="budget-mobile-hypo-info" style="font-size:11px; color:var(--coral); padding:6px 0;"></div>
+            <div style="font-size:11px; color:var(--text3); padding:6px 8px; background:var(--bg3); border-radius:var(--radius-sm);">
+              ⚡ <strong>Pré-65</strong> = dès retraite &nbsp;|&nbsp; 📈 <strong>Post-65</strong> = 65 ans B &nbsp;|&nbsp; 🌙 <strong>Slow-Go</strong> = 70 ans B
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -1636,6 +1668,36 @@ function ajouterCategorie() {
   }
 }
 
+function toggleMobileControls() {
+  const body = document.getElementById('mobile-controls-body');
+  const arrow = document.getElementById('mobile-controls-arrow');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+}
+
+function syncHypo(field, val) {
+  const map = {
+    paiement: ['hypo-paiement', 'hypo-paiement-m'],
+    fin: ['hypo-fin', 'hypo-fin-m'],
+    auto: ['auto-mensuel', 'auto-mensuel-m'],
+  };
+  if (map[field]) {
+    map[field].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el && el.value !== val) el.value = val;
+    });
+  }
+  updateHypo();
+  const paiement = parseFloat(document.getElementById('hypo-paiement-m') ? document.getElementById('hypo-paiement-m').value : document.getElementById('hypo-paiement').value) || 0;
+  const fin = parseInt(document.getElementById('hypo-fin-m') ? document.getElementById('hypo-fin-m').value : document.getElementById('hypo-fin').value) || 2037;
+  const infoEl = document.getElementById('budget-mobile-hypo-info');
+  if (infoEl && paiement > 0) {
+    infoEl.textContent = '+' + fmt(paiement * 12) + '/an ajouté jusqu’en ' + fin;
+  }
+}
+
 function updateHypo() {
   const paiement = parseFloat(document.getElementById('hypo-paiement').value) || 0;
   const fin = parseInt(document.getElementById('hypo-fin').value) || 2037;
@@ -2636,22 +2698,42 @@ function updateHeritage(idx, field, val) {
 
 function setInp(key, val) {
   APP.inputs[key] = val;
-  // Keep nonEnregistre_solde in sync with A+B split
+  // Sync nonEnregistre
   if (key === 'nonEnregistreA_solde' || key === 'nonEnregistreB_solde' || key === 'reee_solde' || key === 'reee_etudes') {
     APP.inputs.nonEnregistre_solde = (APP.inputs.nonEnregistreA_solde||0) + (APP.inputs.nonEnregistreB_solde||0);
-    // Update REEE residuel display in-place (no full re-render needed)
     const reeeEl = document.getElementById('reee-residuel');
     if (reeeEl) {
       const residuel = Math.max(0, (APP.inputs.reee_solde||0) - (APP.inputs.reee_etudes||0));
       reeeEl.textContent = fmt(residuel) + ' transféré au non enregistré';
     }
   }
-  saveData();
+  // Debounce save — avoids blocking mobile keyboard between keystrokes
+  clearTimeout(window._setInpTimer);
+  window._setInpTimer = setTimeout(saveData, 700);
+  // Name change: update nav immediately
   if (key === 'prenomA' || key === 'prenomB') {
-    const a = APP.inputs.prenomA || 'A';
-    const b = APP.inputs.prenomB || 'B';
+    clearTimeout(window._setInpTimer);
+    saveData();
+    const a = APP.inputs.prenomA || 'Conjoint A';
+    const b = APP.inputs.prenomB || 'Conjoint B';
     const el = document.getElementById('nav-brand');
     if (el) el.innerHTML = 'Retraite <span>&nbsp;' + a + ' &amp; ' + b + '</span>';
+  }
+}
+
+function setInpRetraite(ab, val, el) {
+  APP.inputs['anneeRetraite' + ab] = val;
+  clearTimeout(window._setInpTimer);
+  window._setInpTimer = setTimeout(saveData, 700);
+  // Update hint in-place — NO full re-render
+  const anneeNaiss = APP.inputs['anneeNaissance' + ab] || 1980;
+  if (el) {
+    const hint = el.parentElement ? el.parentElement.querySelector('.form-hint') : null;
+    if (hint) {
+      const dans = val - 2026;
+      const age = (2026 - anneeNaiss) + (val - 2026);
+      hint.textContent = 'Dans ' + dans + ' an(s) — à ' + age + ' ans';
+    }
   }
 }
 
@@ -2671,8 +2753,17 @@ function togglePension(key, el) {
 
 function setPension(key, field, val) {
   APP.inputs[key][field] = val;
-  saveData();
-  renderDonneesTab(key === 'pensionA' ? 'pension-a' : 'pension-b');
+  const tab = key === 'pensionA' ? 'pension-a' : 'pension-b';
+  // Immediate re-render for select/toggle (typeRegime, coordRRQ)
+  if (field === 'typeRegime' || field === 'coordRRQ') {
+    saveData();
+    renderDonneesTab(tab);
+  } else {
+    // Debounced for numeric fields — don't re-render on every digit
+    saveData();
+    clearTimeout(window._pensionTimer);
+    window._pensionTimer = setTimeout(function() { renderDonneesTab(tab); }, 900);
+  }
 }
 
 function setRRQ(ab, val) {
