@@ -759,6 +759,7 @@ body {
             <th>Héritage</th>
             <th>Travail</th>
             <th>Impôts</th>
+            <th>Imp. décais.</th>
             <th>Revenu net</th>
             <th>Dépenses</th>
             <th>Surplus/Déficit</th>
@@ -1130,7 +1131,7 @@ function projeterRetraite(inp) {
     const impots = calculerImpots(revImposable, ageA, ageB, revPensions, couple, annee);
     const revNet = Math.max(0, revBrut - impots.total);
 
-    let retrait = 0, surplus = 0;
+    let retrait = 0, surplus = 0, impotsDecaissement = 0;
 
     if (enAccumulation) {
       // --- Phase accumulation pure ---
@@ -1165,16 +1166,78 @@ function projeterRetraite(inp) {
 
       const besoin = Math.max(0, depenses - revNet);
       if (besoin > 0) {
-        retrait = besoin;
-        let reste = besoin;
 
-        // Retrait FERR obligatoire d'abord (déjà soustrait ci-dessous via rendement)
-        // Puis décaissement selon stratégie
+        // ============================================================
+        // GROSS-UP REER: les retraits REER sont imposables.
+        // Pour obtenir 'besoin' net dans la poche, il faut retirer plus brut.
+        // On itère 2 fois pour converger (la taxe dépend du retrait, le retrait de la taxe).
+        //
+        // Stratégie:
+        // 1. Estimer la proportion REER vs CELI du retrait selon la stratégie
+        // 2. Calculer l'impôt marginal sur le retrait REER brut estimé
+        // 3. Grosser-up le besoin REER → besoin_brut_reer = besoin_net_reer / (1 - taux_marginal)
+        // 4. CELI et non-enregistré ne sont PAS imposés à la sortie (déjà net)
+        // ============================================================
+
+        // Estimation initiale de la proportion REER dans le retrait
+        const totReerDisp = st.reerA + st.reerB;
+        const totCeliDisp = st.celiA + st.celiB;
+        const totNonEnrDisp = st.nonEnreg;
+        const totCapDisp = totReerDisp + totCeliDisp + totNonEnrDisp;
+
+        // Proportion REER selon la stratégie de décaissement
+        let fracReer = 0;
+        if (totCapDisp > 0) {
+          if (strategieDecaissement === 'celi_first') {
+            // CELI d'abord: REER seulement si CELI insuffisant
+            const celiCouvre = Math.min(besoin, totCeliDisp);
+            const besoinsRestant = besoin - celiCouvre;
+            const reerUtilise = Math.min(besoinsRestant, totReerDisp);
+            fracReer = reerUtilise / besoin;
+          } else {
+            // REER d'abord: REER prioritaire
+            const reerUtilise = Math.min(besoin, totReerDisp);
+            fracReer = reerUtilise / besoin;
+          }
+        }
+
+        // Taux marginal estimé sur le revenu imposable total cette année
+        // revImposable = revenus gouvern déjà calculés + retrait REER
+        // On itère 2 fois pour converger
+        let besoinnBrutTotal = besoin;
+        let impotsDecaissement = 0;
+
+        if (fracReer > 0 && totReerDisp > 0) {
+          for (let iter = 0; iter < 2; iter++) {
+            const besoinnReerNet = besoin * fracReer;
+            const besoinnReerBrut_est = besoinnBrutTotal * fracReer;
+            // Revenu imposable total incluant le retrait REER
+            const revImposableAvecRetrait = revImposable + besoinnReerBrut_est;
+            const impotsAvecRetrait = calculerImpots(revImposableAvecRetrait, ageA, ageB, revPensions, couple, annee);
+            const impotsSansRetrait = impots; // déjà calculé
+            // Impôt marginal sur le retrait REER
+            const impotMarginalRetrait = Math.max(0, impotsAvecRetrait.total - impotsSansRetrait.total);
+            // Taux effectif marginal sur ce retrait
+            const tauxMarginal = besoinnReerBrut_est > 0 ? impotMarginalRetrait / besoinnReerBrut_est : 0;
+            // Gross-up: pour avoir besoinnReerNet net, il faut retirer besoinnReerBrut brut
+            const besoinnReerBrut = tauxMarginal < 0.99
+              ? besoinnReerNet / (1 - tauxMarginal)
+              : besoinnReerNet * 2;
+            // Total brut à retirer (REER grossé-up + reste en CELI/nonEnr qui reste net)
+            besoinnBrutTotal = besoinnReerBrut + besoin * (1 - fracReer);
+            impotsDecaissement = besoinnReerBrut - besoinnReerNet;
+          }
+        }
+
+        retrait = besoinnBrutTotal;
+        let reste = besoinnBrutTotal;
+
+        // Décaissement selon stratégie (montants bruts)
         if (strategieDecaissement === 'celi_first') {
-          // CELI d'abord, puis REER
+          // CELI net d'abord (pas d'impôt), puis REER grossé-up
           const totCeli = st.celiA + st.celiB;
           if (totCeli > 0) {
-            const dc = Math.min(reste, totCeli);
+            const dc = Math.min(besoin * (1 - fracReer), totCeli);
             const pA = st.celiA / totCeli;
             st.celiA = Math.max(0, st.celiA - dc * pA);
             st.celiB = Math.max(0, st.celiB - dc * (1 - pA));
@@ -1191,14 +1254,15 @@ function projeterRetraite(inp) {
             }
           }
         } else {
-          // REER d'abord (défaut), puis CELI
+          // REER grossé-up d'abord, puis CELI net, puis non-enregistré
           const totReer = st.reerA + st.reerB;
           if (totReer > 0) {
-            const dr = Math.min(reste, totReer);
+            const dr = Math.min(besoin * fracReer / (1 - (besoinnBrutTotal > 0 ? impotsDecaissement / besoinnBrutTotal : 0)), totReer);
+            const reerBrut = Math.min(reste, dr + impotsDecaissement);
             const pA = st.reerA / totReer;
-            st.reerA = Math.max(0, st.reerA - dr * pA);
-            st.reerB = Math.max(0, st.reerB - dr * (1 - pA));
-            reste -= dr;
+            st.reerA = Math.max(0, st.reerA - reerBrut * pA);
+            st.reerB = Math.max(0, st.reerB - reerBrut * (1 - pA));
+            reste -= reerBrut;
           }
           if (reste > 0) {
             const totCeli = st.celiA + st.celiB;
@@ -1249,6 +1313,7 @@ function projeterRetraite(inp) {
       surplus: enRetraite ? surplus : 0,
       retrait,
       ferr: ferrA + ferrB,
+      impotsDecaissement: impotsDecaissement || 0,
       reerA: Math.max(0, st.reerA),
       reerB: Math.max(0, st.reerB),
       celiA: Math.max(0, st.celiA),
@@ -3037,6 +3102,17 @@ function renderResultats() {
     document.getElementById('res-rendement').textContent = ((inp.rendementAccumulation||0.06)*100).toFixed(1) + '%';
     document.getElementById('res-rendement-ret').textContent = 'Retraite: ' + ((inp.rendementRetraite||0.045)*100).toFixed(1) + '%';
 
+    // Total taxes paid in retirement
+    const lignesRet2 = lignes.filter(function(l){ return l.enRetraite; });
+    const totalImpots = lignesRet2.reduce(function(s,l){ return s + (l.impots||0); }, 0);
+    const totalImpDecais = lignesRet2.reduce(function(s,l){ return s + (l.impotsDecaissement||0); }, 0);
+    const elImpotsTotal = document.getElementById('res-impots-total');
+    const elImpotsDecais = document.getElementById('res-impots-decais');
+    const elImpotsub = document.getElementById('res-impots-sub');
+    if (elImpotsTotal) elImpotsTotal.textContent = fmt(totalImpots);
+    if (elImpotsDecais) elImpotsDecais.textContent = fmt(totalImpDecais);
+    if (elImpotsub) elImpotsub.innerHTML = 'dont impôts sur décaissements REER : <span id="res-impots-decais"><strong>' + fmt(totalImpDecais) + '</strong></span>';
+
     // Capital résiduel à 100 ans du conjoint A
     const age100A = inp.anneeNaissanceA + 100;
     const ligne100 = lignes.find(function(l){ return l.ageA >= 100; }) || lignes[lignes.length - 1];
@@ -3170,6 +3246,7 @@ function filtrerDetails() {
       <td class="${(l.heritage||0)>0?'gold':''}">${(l.heritage||0)>0?fmtK(l.heritage):'—'}</td>
       <td>${l.travail>0?fmtK(l.travail):'—'}</td>
       <td class="negative">${l.impots>0?fmtK(l.impots):'—'}</td>
+      <td class="negative" style="opacity:0.7;">${(l.impotsDecaissement||0)>0?fmtK(l.impotsDecaissement):'—'}</td>
       <td>${fmtK(l.revNet)}</td>
       <td class="${l.enRetraite?'':''}"">${l.enRetraite?fmtK(l.depenses):'—'}</td>
       <td class="${sdSign>0?'positive':'negative'}">${l.enRetraite?(sdSign>=0?'+'+fmtK(sdSign):fmtK(sdSign)):'—'}</td>
