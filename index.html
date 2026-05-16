@@ -1210,7 +1210,7 @@ function projeterRetraite(inp) {
         // revImposable = revenus gouvern déjà calculés + retrait REER
         // On itère 2 fois pour converger
         let besoinnBrutTotal = besoin;
-        let impotsDecaissement = 0;
+        // impotsDecaissement already declared at loop scope
 
         if (fracReer > 0 && totReerDisp > 0) {
           for (let iter = 0; iter < 2; iter++) {
