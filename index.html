@@ -1235,14 +1235,19 @@ function projeterRetraite(inp) {
         }
 
         retrait = besoinnBrutTotal;
+
+        // Montants à retirer de chaque compte (bruts):
+        // REER brut = besoinnBrutTotal - besoin*(1-fracReer) = besoin*fracReer/(1-tauxMarg)
+        // CELI/nonEnreg = besoin*(1-fracReer) — pas d'impôt à la sortie
+        const reerBrutARetirer = besoinnBrutTotal - besoin * (1 - fracReer);
+        const celiNetARetirer = besoin * (1 - fracReer);
         let reste = besoinnBrutTotal;
 
-        // Décaissement selon stratégie (montants bruts)
         if (strategieDecaissement === 'celi_first') {
-          // CELI net d'abord (pas d'impôt), puis REER grossé-up
+          // CELI d'abord (net), puis REER (brut grossé-up)
           const totCeli = st.celiA + st.celiB;
           if (totCeli > 0) {
-            const dc = Math.min(besoin * (1 - fracReer), totCeli);
+            const dc = Math.min(celiNetARetirer, totCeli);
             const pA = st.celiA / totCeli;
             st.celiA = Math.max(0, st.celiA - dc * pA);
             st.celiB = Math.max(0, st.celiB - dc * (1 - pA));
@@ -1259,11 +1264,10 @@ function projeterRetraite(inp) {
             }
           }
         } else {
-          // REER grossé-up d'abord, puis CELI net, puis non-enregistré
+          // REER d'abord (brut grossé-up), puis CELI (net), puis non-enregistré
           const totReer = st.reerA + st.reerB;
           if (totReer > 0) {
-            const dr = Math.min(besoin * fracReer / (1 - (besoinnBrutTotal > 0 ? impotsDecaissement / besoinnBrutTotal : 0)), totReer);
-            const reerBrut = Math.min(reste, dr + impotsDecaissement);
+            const reerBrut = Math.min(reerBrutARetirer, totReer);
             const pA = st.reerA / totReer;
             st.reerA = Math.max(0, st.reerA - reerBrut * pA);
             st.reerB = Math.max(0, st.reerB - reerBrut * (1 - pA));
