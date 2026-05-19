@@ -1216,18 +1216,21 @@ function projeterRetraite(inp) {
           for (let iter = 0; iter < 2; iter++) {
             const besoinnReerNet = besoin * fracReer;
             const besoinnReerBrut_est = besoinnBrutTotal * fracReer;
-            // Revenu imposable total incluant le retrait REER
-            const revImposableAvecRetrait = revImposable + besoinnReerBrut_est;
-            const impotsAvecRetrait = calculerImpots(revImposableAvecRetrait, ageA, ageB, revPensions, couple, annee);
-            const impotsSansRetrait = impots; // déjà calculé
-            // Impôt marginal sur le retrait REER
-            const impotMarginalRetrait = Math.max(0, impotsAvecRetrait.total - impotsSansRetrait.total);
+            // Pour un couple: les retraits REER viennent des comptes individuels.
+            // On calcule l'impôt marginal sur la part individuelle (÷2 si couple).
+            const diviseur = couple ? 2 : 1;
+            const revIndiv = revImposable / diviseur;
+            const retraitIndiv = besoinnReerBrut_est / diviseur;
+            const impotsAvecIndiv = calculerImpots(revIndiv + retraitIndiv, ageA, ageB, revPensions / diviseur, false, annee);
+            const impotsBaseIndiv = calculerImpots(revIndiv, ageA, ageB, revPensions / diviseur, false, annee);
+            // Impôt marginal sur le retrait — multiplié par le nombre de personnes
+            const impotMarginalRetrait = Math.max(0, (impotsAvecIndiv.total - impotsBaseIndiv.total) * diviseur);
             // Taux effectif marginal sur ce retrait
             const tauxMarginal = besoinnReerBrut_est > 0 ? impotMarginalRetrait / besoinnReerBrut_est : 0;
             // Gross-up: pour avoir besoinnReerNet net, il faut retirer besoinnReerBrut brut
             const besoinnReerBrut = tauxMarginal < 0.99
               ? besoinnReerNet / (1 - tauxMarginal)
-              : besoinnReerNet * 2;
+              : besoinnReerNet * 1.5; // cap à 150% si taux très élevé
             // Total brut à retirer (REER grossé-up + reste en CELI/nonEnr qui reste net)
             besoinnBrutTotal = besoinnReerBrut + besoin * (1 - fracReer);
             impotsDecaissement = besoinnReerBrut - besoinnReerNet;
@@ -1244,7 +1247,7 @@ function projeterRetraite(inp) {
         let reste = besoinnBrutTotal;
 
         if (strategieDecaissement === 'celi_first') {
-          // CELI d'abord (net), puis REER (brut grossé-up)
+          // CELI d'abord (net), puis REER (brut grossé-up), puis non-enregistré
           const totCeli = st.celiA + st.celiB;
           if (totCeli > 0) {
             const dc = Math.min(celiNetARetirer, totCeli);
@@ -1262,6 +1265,10 @@ function projeterRetraite(inp) {
               st.reerB = Math.max(0, st.reerB - dr * (1 - pA));
               reste -= dr;
             }
+          }
+          if (reste > 0) {
+            // Fallback: non-enregistré (net, pas d'impôt à la sortie)
+            st.nonEnreg = Math.max(0, st.nonEnreg - reste);
           }
         } else {
           // REER d'abord (brut grossé-up), puis CELI (net), puis non-enregistré
