@@ -2683,7 +2683,16 @@ function togglePension(key, el) {
 function setPension(key, field, val) {
   APP.inputs[key][field] = val;
   saveData();
-  renderDonneesTab(key === 'pensionA' ? 'pension-a' : 'pension-b');
+  // Immediate re-render only for select/toggle (no typing involved)
+  // Debounce for all numeric fields so focus isn't lost while typing
+  const immediateFields = ['typeRegime', 'coordRRQ', 'active'];
+  const tab = key === 'pensionA' ? 'pension-a' : 'pension-b';
+  if (immediateFields.indexOf(field) >= 0) {
+    renderDonneesTab(tab);
+  } else {
+    clearTimeout(window._pensionTimer);
+    window._pensionTimer = setTimeout(function() { renderDonneesTab(tab); }, 1000);
+  }
 }
 
 function setRRQ(ab, val) {
