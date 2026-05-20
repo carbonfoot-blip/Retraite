@@ -506,25 +506,7 @@ body {
           <div class="stat-value" id="sidebar-mensuel" style="font-size:20px;">—</div>
         </div>
       </div>
-      <div class="sidebar-section">Hypothèque / Auto</div>
-      <div style="padding: 4px 12px;">
-        <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label">Paiement hypothèque/auto actuel ($/mois)</label>
-          <input type="number" class="form-input" id="hypo-paiement" value="2233" oninput="updateHypo()">
-        </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label">Fin hypothèque (année)</label>
-          <input type="number" class="form-input" id="hypo-fin" value="2037" oninput="updateHypo()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Voiture: coût mensuel remplacement</label>
-          <input type="number" class="form-input" id="auto-mensuel" value="833" oninput="updateHypo()">
-        </div>
-        <div style="margin-top:12px; padding:10px; background:var(--bg3); border-radius:var(--radius-sm);">
-          <div class="stat-label">Moyenne calculée/mois</div>
-          <div class="stat-value" id="hypo-moyenne" style="font-size:16px; color:var(--teal);">—</div>
-        </div>
-      </div>
+
     </div>
     <div class="main-content">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
@@ -1234,7 +1216,7 @@ let APP = {
 
 const DEFAULT_BUDGET = [
   { cat: 'Habitation', items: [
-    { nom: 'Hypothèque / voiture (moyenne)', mensuel: 727 },
+    { nom: 'Hypothèque (mensuel)', mensuel: 2233, finAnnee: 2037 },
     { nom: 'Assurance habitation', mensuel: 125 },
     { nom: 'Taxes municipales/scolaires', mensuel: 350 },
     { nom: 'Mobilier, déco & rénos', mensuel: 200 },
@@ -1245,6 +1227,7 @@ const DEFAULT_BUDGET = [
     { nom: 'Restaurants', mensuel: 300 },
   ]},
   { cat: 'Transport', items: [
+    { nom: 'Financement / remplacement voiture', mensuel: 365 },
     { nom: 'Essence', mensuel: 350 },
     { nom: 'Entretien', mensuel: 80 },
     { nom: 'Assurances auto', mensuel: 100 },
@@ -1585,18 +1568,21 @@ function ajouterCategorie() {
 }
 
 function updateHypo() {
-  const paiement = parseFloat(document.getElementById('hypo-paiement').value) || 0;
-  const fin = parseInt(document.getElementById('hypo-fin').value) || 2037;
-  const auto = parseFloat(document.getElementById('auto-mensuel').value) || 0;
-  const anneesAvecHypo = Math.max(0, fin - 2026);
-  const anneesTotal = 40;
-  const moyenne = (paiement * anneesAvecHypo + auto * (anneesTotal - anneesAvecHypo)) / anneesTotal;
-  document.getElementById('hypo-moyenne').textContent = fmt(moyenne) + '/mois';
-  // Mettre à jour le premier item habitation
-  if (APP.budget[APP.phase]?.[0]?.items?.[0]) {
-    APP.budget[APP.phase][0].items[0].mensuel = Math.round(moyenne);
-    saveData(); renderBudget();
-  }
+  // Hypo is now managed directly in the budget table rows (item.finAnnee)
+  // Sync anneeFinHypotheque and surplusHypotheque from budget data
+  const budgetPhases = ['gogo','slowgo','nogo'];
+  budgetPhases.forEach(function(ph) {
+    const habCat = APP.budget[ph] && APP.budget[ph][0];
+    if (habCat) {
+      habCat.items.forEach(function(item) {
+        if (item.finAnnee) {
+          APP.inputs.anneeFinHypotheque = item.finAnnee;
+          APP.inputs.surplusHypotheque = (item.mensuel || 0) * 12;
+        }
+      });
+    }
+  });
+  saveData();
 }
 
 // ============================================================
@@ -3086,6 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateNavBrand();
   renderBudget();
+  updateHypo(); // sync hypo params from budget table
   showDonneesTab('profil');
   renderScenariosList();
   recalculerTout();
