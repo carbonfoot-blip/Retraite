@@ -1072,6 +1072,8 @@ function projeterRetraite(inp) {
     }
 
     // --- RRQ — s'active à l'âge choisi, indexé chaque année après ---
+    // Index BEFORE activation so the activation year shows the correct unindexed amount
+    if (st.rrq > 0 && annee > anneeCalc) st.rrq *= (1 + FISCAL_2026.rrq.indexation);
     if (!st.rrqAActif && rrqA_montant > 0 && ageA >= ageRRQA) {
       st.rrq += rrqA_montant;
       st.rrqAActif = true;
@@ -1080,9 +1082,9 @@ function projeterRetraite(inp) {
       st.rrq += rrqB_montant;
       st.rrqBActif = true;
     }
-    if (st.rrq > 0 && annee > anneeCalc) st.rrq *= (1 + FISCAL_2026.rrq.indexation);
 
-    // --- PSV — s'active à l'âge choisi, indexé chaque année après ---
+    // Same for PSV: index first, then activate
+    if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
     if (!st.psvAActif && psvA_montant > 0 && ageA >= agePSVA) {
       st.psv += psvA_montant;
       st.psvAActif = true;
@@ -1091,7 +1093,6 @@ function projeterRetraite(inp) {
       st.psv += psvB_montant;
       st.psvBActif = true;
     }
-    if (st.psv > 0 && annee > anneeCalc) st.psv *= (1 + FISCAL_2026.rrq.indexation);
 
     // Budget selon la phase — pivots basés sur l'âge de B (conjoint B)
     // Phase 1 (gogo): Retraite → 65 ans B (pré-pension)
@@ -2678,7 +2679,10 @@ function renderPSVCard(prenom, ab, psvData, psv65, psv70) {
     val.textContent = fmt(aff);
     const sub = document.createElement('div');
     sub.className = 'stat-sub';
-    sub.textContent = 'Calculé: ' + fmt(calc);
+    // Show both future dollars and 2026 equivalent
+    const anneePSV = anneeNaiss + age;
+    const aff2026 = Math.round(aff / Math.pow(1.02, Math.max(0, age - (2026 - anneeNaiss))));
+    sub.innerHTML = '<span style="color:var(--text3);font-size:10px;">dollars ' + anneePSV + ' (nominaux)</span><br>~' + fmt(aff2026) + ' en dollars 2026';
     card.appendChild(lbl);
     card.appendChild(val);
     card.appendChild(sub);
@@ -3338,6 +3342,22 @@ document.addEventListener('DOMContentLoaded', () => {
   recalculerTout();
   updateLastUpdate();
 });
-</script>
-</body>
-</html>
+</      // Convert to 2026 dollars for comparison with government site
+      const anneesPSVA = agePSVA - (2026 - inp.anneeNaissanceA);
+      const anneesPSVB = agePSVB - (2026 - inp.anneeNaissanceB);
+      const mPSVA_2026 = Math.round(mPSVA / Math.pow(1.02, Math.max(0, anneesPSVA)));
+      const mPSVB_2026 = Math.round(mPSVB / Math.pow(1.02, Math.max(0, anneesPSVB)));
+
+      hintPSV.innerHTML = '<strong>Montants calculés :</strong><br>' +
+        '• <strong>' + inp.prenomA + '</strong> à ' + agePSVA + ' ans (' + (inp.anneeNaissanceA + agePSVA) + ') : ' +
+          '<strong style="color:var(--gold)">' + fmt(mPSVA) + '/an</strong> en dollars ' + (inp.anneeNaissanceA + agePSVA) +
+          ' — <strong style="color:var(--text2)">~' + fmt(mPSVA_2026) + '/an</strong> en dollars 2026' +
+          (ovPSVA ? ' | <span style="color:var(--teal)">✏️ Manuel: ' + fmt(parseFloat(ovPSVA)) + '</span>' : '') + '<br>' +
+        '• <strong>' + inp.prenomB + '</strong> à ' + agePSVB + ' ans (' + (inp.anneeNaissanceB + agePSVB) + ') : ' +
+          '<strong style="color:var(--gold)">' + fmt(mPSVB) + '/an</strong> en dollars ' + (inp.anneeNaissanceB + agePSVB) +
+          ' — <strong style="color:var(--text2)">~' + fmt(mPSVB_2026) + '/an</strong> en dollars 2026' +
+          (ovPSVB ? ' | <span style="color:var(--teal)">✏️ Manuel: ' + fmt(parseFloat(ovPSVB)) + '</span>' : '') + '<br>' +
+        '<br><span style="color:var(--text3);font-size:11px;">Canada.ca affiche en dollars 2026. L’app projette en dollars futurs (nominaux) pour correspondre à votre budget indexé. Les deux sont corrects.</span><br>' +
+        '<br><strong>Note :</strong> PSV garantie si 40+ ans de résidence au Canada après 18 ans.';
+
+      >
