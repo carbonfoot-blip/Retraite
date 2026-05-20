@@ -920,6 +920,8 @@ function projeterRetraite(inp) {
     budgetSlowgo=null,
     budgetNogo=null,
     anneeDeuxiemeRetraite=2026,
+    anneeFinHypotheque=0,
+    surplusHypotheque=0,
     inflation=0.025, rendementAccumulation=0.06, rendementRetraite=0.045,
     augmentationSalaire=0,
     strategieDecaissement='reer_first',
@@ -1009,11 +1011,17 @@ function projeterRetraite(inp) {
 
     // Budget selon la phase: Go-Go dès la retraite, Slow-Go à 70 ans A, No-Go à 80 ans A
     const agePivot = ageA; // on base les phases sur l'âge du conjoint A
-    const budgetBase = enRetraite
+    // Base budget by phase (excludes hypothèque — added below)
+    const budgetPhaseBase = enRetraite
       ? (agePivot >= 80 && budgetNogo ? budgetNogo
         : agePivot >= 70 && budgetSlowgo ? budgetSlowgo
         : budgetRetraite)
       : 0;
+    // Add hypothèque amount until anneeFinHypotheque (in indexed dollars)
+    const hypoAnnee = (enRetraite && anneeFinHypotheque > 0 && annee < anneeFinHypotheque && surplusHypotheque > 0)
+      ? surplusHypotheque
+      : 0;
+    const budgetBase = budgetPhaseBase + hypoAnnee;
     const depenses = budgetBase * Math.pow(1 + (inflation || 0.025), annee - anneeCalc);
     const rendement = enRetraite ? (rendementRetraite || 0.045) : (rendementAccumulation || 0.06);
     const capitalDebut = Math.max(0, st.reerA + st.reerB + st.celiA + st.celiB + st.nonEnreg);
@@ -1337,6 +1345,17 @@ function loadData() {
     if (!APP.inputs.psvB) APP.inputs.psvB = { ageDemande: 65 };
     if (!APP.inputs.heritages) APP.inputs.heritages = [];
   }
+  // Migration: add finAnnee to Hypothèque budget items if missing (after format change)
+  ['gogo','slowgo','nogo'].forEach(function(ph) {
+    if (!APP.budget[ph]) return;
+    APP.budget[ph].forEach(function(cat) {
+      cat.items.forEach(function(item) {
+        if ((item.nom || '').toLowerCase().includes('hypoth') && !item.finAnnee) {
+          item.finAnnee = APP.inputs.anneeFinHypotheque || 2037;
+        }
+      });
+    });
+  });
   if (s) APP.scenarios = JSON.parse(s);
   updateLastUpdate();
 }
@@ -2710,11 +2729,25 @@ function recalculerTout() {
   const inp = APP.inputs;
 
   // Calcul budget actif (go-go par défaut)
+  // Exclude items with finAnnee (hypothèque) from base budget — engine adds them separately
   const calcBudget = (phase) => (APP.budget[phase] || []).reduce((sum, cat) =>
-    sum + cat.items.reduce((s, i) => s + (parseFloat(i.mensuel)||0)*12, 0), 0);
+    sum + cat.items.reduce((s, i) => s + (i.finAnnee ? 0 : (parseFloat(i.mensuel)||0)*12), 0), 0);
   APP.inputs.budgetRetraite = calcBudget('gogo');
   APP.inputs.budgetSlowgo  = calcBudget('slowgo');
   APP.inputs.budgetNogo    = calcBudget('nogo');
+
+  // Extract hypothèque params from budget data
+  let _hypoMensuel = 0, _hypoFin = 0;
+  (APP.budget['gogo'] || []).forEach(function(cat) {
+    cat.items.forEach(function(item) {
+      if (item.finAnnee && item.finAnnee > 0) {
+        _hypoMensuel = parseFloat(item.mensuel) || 0;
+        _hypoFin = item.finAnnee;
+      }
+    });
+  });
+  APP.inputs.surplusHypotheque = _hypoMensuel * 12;
+  APP.inputs.anneeFinHypotheque = _hypoFin || 0;
 
   // Pension A
   let pensionAData = null;
@@ -2805,6 +2838,8 @@ function recalculerTout() {
     budgetSlowgo: APP.inputs.budgetSlowgo,
     budgetNogo: APP.inputs.budgetNogo,
     anneeDeuxiemeRetraite: Math.max(inp.anneeRetraiteA, inp.anneeRetraiteB || inp.anneeRetraiteA),
+    anneeFinHypotheque: inp.anneeFinHypotheque || 0,
+    surplusHypotheque: inp.surplusHypotheque || 0,
     inflation: inp.inflation, rendementAccumulation: inp.rendementAccumulation,
     rendementRetraite: inp.rendementRetraite, augmentationSalaire: inp.augmentationSalaire,
     strategieDecaissement: inp.strategieDecaissement,
