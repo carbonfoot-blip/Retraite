@@ -824,17 +824,27 @@ function calculerPensionPD(p) {
   }
   const renteAvantReduction = renteBase - coordMontant;
   let rente = renteAvantReduction;
-  if (p.ageRetraite < p.ageSansPenalite && p.ageRetraite >= (p.ageSansPenalite - 10)) {
-    const annees = p.ageSansPenalite - p.ageRetraite;
-    rente = renteAvantReduction * (1 - p.tauxReductionAnnuel * annees);
-  } else if (p.ageRetraite < 55 && p.ageDebutDecaissement > p.ageRetraite) {
-    const anneesAttente = p.ageDebutDecaissement - p.ageRetraite;
+  const annesAvantSeuil = Math.max(0, p.ageSansPenalite - p.ageRetraite);
+  const retraiteImmediateAvantSeuil = p.ageRetraite < p.ageSansPenalite
+    && (p.ageDebutDecaissement || p.ageRetraite) <= p.ageRetraite;
+  const retraiteDiffereAvantSeuil = p.ageRetraite < p.ageSansPenalite
+    && (p.ageDebutDecaissement || p.ageRetraite) > p.ageRetraite;
+
+  if (retraiteImmediateAvantSeuil) {
+    // Décaissement immédiat avant l'âge sans pénalité → pénalité pleine
+    // Plafonnée à 1.0 (ne peut pas dépasser 100%)
+    const penalite = Math.min(1.0, p.tauxReductionAnnuel * annesAvantSeuil);
+    rente = renteAvantReduction * (1 - penalite);
+  } else if (retraiteDiffereAvantSeuil) {
+    // Rente différée: retraite avant seuil mais versement plus tard → indexation pendant report
+    const anneesAttente = (p.ageDebutDecaissement || p.ageSansPenalite) - p.ageRetraite;
     rente = renteAvantReduction * Math.pow(1 + (p.indexationReport || 0.02), anneesAttente);
   }
+  // Si ageRetraite >= ageSansPenalite: aucune réduction
   return {
     renteBase, coordMontant,
     renteAvantReduction,
-    reduction: Math.max(0, p.ageSansPenalite - p.ageRetraite) * p.tauxReductionAnnuel,
+    reduction: retraiteImmediateAvantSeuil ? Math.min(1.0, p.tauxReductionAnnuel * annesAvantSeuil) : 0,
     renteAuDebut: Math.max(0, rente),
     indexationRente: p.indexationRente || 0.02,
     ageDebutDecaissement: p.ageDebutDecaissement || 65,
