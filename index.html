@@ -2263,8 +2263,8 @@ function renderDonneesTab(tab) {
       const gridPSV = document.createElement('div');
       gridPSV.className = 'grid grid-2';
       gridPSV.style.gap = '20px';
-      gridPSV.appendChild(renderPSVCard(inp.prenomA, 'A', inp.psvA, psvA_65, psvA_70));
-      gridPSV.appendChild(renderPSVCard(inp.prenomB, 'B', inp.psvB, psvB_65, psvB_70));
+      gridPSV.appendChild(renderPSVCard(inp.prenomA, 'A', inp.psvA, psvA_65, psvA_70, inp.anneeNaissanceA));
+      gridPSV.appendChild(renderPSVCard(inp.prenomB, 'B', inp.psvB, psvB_65, psvB_70, inp.anneeNaissanceB));
       c.appendChild(gridPSV);
       break;
     }
@@ -2503,7 +2503,7 @@ function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
   return wrap;
 }
 
-function renderPSVCard(prenom, ab, psvData, psv65, psv70) {
+function renderPSVCard(prenom, ab, psvData, psv65, psv70, anneeNaiss) {
   const abl = ab.toLowerCase();
   const ov65 = psvData && psvData.override65;
   const ov70 = psvData && psvData.override70;
