@@ -1497,26 +1497,85 @@ function renderBudget() {
     catDiv.innerHTML = `<div class="budget-cat-header">${cat.cat}</div>`;
 
     cat.items.forEach((item, itemIdx) => {
+      const isHypo = !!(item.finAnnee && item.finAnnee > 0);
       const annuel = (parseFloat(item.mensuel) || 0) * 12;
       totalM += parseFloat(item.mensuel) || 0;
       totalA += annuel;
-      const row = document.createElement('div');
-      row.className = 'budget-row';
-      const nomId = `bnom-${catIdx}-${itemIdx}`;
-      const mId = `bm-${catIdx}-${itemIdx}`;
       const cId = `bc-${catIdx}-${itemIdx}`;
-      row.innerHTML = `
-        <input id="${nomId}" type="text" class="budget-input" style="text-align:left;" value="${item.nom.replace(/"/g,'&quot;')}"
-          oninput="updateBudgetNom(${catIdx},${itemIdx},this.value)" placeholder="Poste">
-        <input id="${mId}" type="number" class="budget-input" value="${item.mensuel}"
-          oninput="updateBudgetMensuel(${catIdx},${itemIdx},this.value,'${cId}')" placeholder="0"
-          onblur="saveData()">
-        <div id="${cId}" class="budget-computed">${fmt(annuel)}</div>
-        <button class="del-btn" onclick="supprimerLigne(${catIdx},${itemIdx})">×</button>
-      `;
-      catDiv.appendChild(row);
-    });
 
+      if (isHypo) {
+        // Ligne hypothèque: rendu spécial avec champ année de fin inline
+        const hypoWrap = document.createElement('div');
+        hypoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.03); padding:4px 8px 2px;';
+
+        // Ligne principale: nom | mensuel $/m | jusqu'en | année | montant* | ×
+        const hypoRow = document.createElement('div');
+        hypoRow.style.cssText = 'display:grid; grid-template-columns:1fr 90px 60px 72px 90px 28px; gap:5px; align-items:center;';
+
+        const nomInp = document.createElement('input');
+        nomInp.type = 'text'; nomInp.className = 'budget-input'; nomInp.style.textAlign = 'left';
+        nomInp.value = item.nom; nomInp.placeholder = 'Poste';
+        nomInp.addEventListener('input', (function(c,i){return function(){updateBudgetNom(c,i,this.value);};})(catIdx,itemIdx));
+
+        const mInp = document.createElement('input');
+        mInp.type = 'number'; mInp.className = 'budget-input'; mInp.value = item.mensuel; mInp.placeholder = '0';
+        mInp.addEventListener('input', (function(c,i,id){return function(){updateBudgetMensuel(c,i,this.value,id);};})(catIdx,itemIdx,cId));
+        mInp.addEventListener('blur', function(){
+          APP.inputs.surplusHypotheque = (parseFloat(this.value)||0)*12;
+          saveData();
+        });
+
+        const jusqLabel = document.createElement('span');
+        jusqLabel.style.cssText = 'font-size:10px; color:var(--text3); text-align:right; white-space:nowrap;';
+        jusqLabel.textContent = 'jusqu’en';
+
+        const yInp = document.createElement('input');
+        yInp.type = 'number'; yInp.className = 'budget-input';
+        yInp.value = item.finAnnee || 2037;
+        yInp.min = '2026'; yInp.max = '2060';
+        yInp.addEventListener('input', (function(c,i){return function(){
+          const yr = parseInt(this.value) || 2037;
+          ['gogo','slowgo','nogo'].forEach(function(ph){
+            if(APP.budget[ph] && APP.budget[ph][c] && APP.budget[ph][c].items[i])
+              APP.budget[ph][c].items[i].finAnnee = yr;
+          });
+          APP.inputs.anneeFinHypotheque = yr;
+          clearTimeout(window._budgetSaveTimer);
+          window._budgetSaveTimer = setTimeout(saveData, 600);
+        };})(catIdx,itemIdx));
+
+        const annuelDiv = document.createElement('div');
+        annuelDiv.id = cId; annuelDiv.className = 'budget-computed';
+        annuelDiv.style.cssText = 'color:var(--coral); font-size:12px;';
+        annuelDiv.textContent = fmt(annuel) + ' *';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-btn'; delBtn.textContent = '×';
+        delBtn.addEventListener('click', (function(c,i){return function(){supprimerLigne(c,i);};})(catIdx,itemIdx));
+
+        hypoRow.appendChild(nomInp); hypoRow.appendChild(mInp);
+        hypoRow.appendChild(jusqLabel); hypoRow.appendChild(yInp);
+        hypoRow.appendChild(annuelDiv); hypoRow.appendChild(delBtn);
+        hypoWrap.appendChild(hypoRow);
+
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:10px; color:var(--coral); padding:1px 0 4px;';
+        note.textContent = '* Ajouté au budget jusqu’en ' + (item.finAnnee||2037) + ', puis disparaît';
+        hypoWrap.appendChild(note);
+        catDiv.appendChild(hypoWrap);
+
+        // Sync engine params
+        APP.inputs.anneeFinHypotheque = item.finAnnee || 2037;
+        APP.inputs.surplusHypotheque = (parseFloat(item.mensuel) || 0) * 12;
+
+      } else {
+        const row = document.createElement('div'); row.className = 'budget-row';
+        const nomId = `bnom-${catIdx}-${itemIdx}`;
+        const mId = `bm-${catIdx}-${itemIdx}`;
+        row.innerHTML = `<input id="${nomId}" type="text" class="budget-input" style="text-align:left;" value="${item.nom.replace(/"/g,'&quot;')}" oninput="updateBudgetNom(${catIdx},${itemIdx},this.value)" placeholder="Poste"><input id="${mId}" type="number" class="budget-input" value="${item.mensuel}" oninput="updateBudgetMensuel(${catIdx},${itemIdx},this.value,'${cId}')" placeholder="0" onblur="saveData()"><div id="${cId}" class="budget-computed">${fmt(annuel)}</div><button class="del-btn" onclick="supprimerLigne(${catIdx},${itemIdx})">×</button>`;
+        catDiv.appendChild(row);
+      }
+    });
     const addBtn = document.createElement('button');
     addBtn.className = 'add-row-btn';
     addBtn.textContent = `+ Ajouter un poste à "${cat.cat}"`;
