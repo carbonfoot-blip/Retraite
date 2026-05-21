@@ -1055,9 +1055,10 @@ function projeterRetraite(inp) {
     const revBrut = revTravail + revPensions + revGouv + st.revLoc;
 
     // --- Impôts ---
-    const revImposable = enRetraite
-      ? revPensions + revGouv + st.revLoc + ferrA + ferrB
-      : revTravail;
+    // Revenu imposable = tout ce qui est taxable, peu importe la phase
+    // En phase mixte (un retraité, un en emploi): salaire + pensions + govt + FERR
+    // Les composantes non actives sont déjà à 0
+    const revImposable = revTravail + revPensions + revGouv + st.revLoc + ferrA + ferrB;
     const impots = calculerImpots(revImposable, ageA, ageB, revPensions, couple, annee);
     const revNet = Math.max(0, revBrut - impots.total);
 
