@@ -901,7 +901,7 @@ function calculerPensionPD(p) {
     renteAvantReduction,
     reduction: retraiteImmediateAvantSeuil ? Math.min(1.0, p.tauxReductionAnnuel * annesAvantSeuil) : 0,
     renteAuDebut: Math.max(0, rente),
-    indexationRente: p.indexationRente || 0.02,
+    indexationRente: (p.indexationRente != null ? p.indexationRente : 0.02),
     ageDebutDecaissement: p.ageDebutDecaissement || 65,
   };
 }
@@ -1041,12 +1041,12 @@ function projeterRetraite(inp) {
         // Coordination RRQ à 65 ans — réduction permanente une seule fois
         if (ageA === 65 && pensionAData.coordMontant > 0 && !st.coordAAppliquee) {
           const coordIdx = pensionAData.coordMontant *
-            Math.pow(1 + (pensionAData.indexationRente || 0.02),
+            Math.pow(1 + (pensionAData.indexationRente != null ? pensionAData.indexationRente : 0.02),
               ageA - (pensionAData.ageDebutDecaissement || 65));
           st.pensionA = Math.max(0, st.pensionA - coordIdx);
           st.coordAAppliquee = true;
         }
-        st.pensionA *= (1 + (pensionAData.indexationRente || 0.02));
+        st.pensionA *= (1 + (pensionAData.indexationRente != null ? pensionAData.indexationRente : 0.02));
       }
     }
 
@@ -1057,12 +1057,12 @@ function projeterRetraite(inp) {
       } else {
         if (ageB === 65 && pensionBData.coordMontant > 0 && !st.coordBAppliquee) {
           const coordIdx = pensionBData.coordMontant *
-            Math.pow(1 + (pensionBData.indexationRente || 0.02),
+            Math.pow(1 + (pensionBData.indexationRente != null ? pensionBData.indexationRente : 0.02),
               ageB - (pensionBData.ageDebutDecaissement || 65));
           st.pensionB = Math.max(0, st.pensionB - coordIdx);
           st.coordBAppliquee = true;
         }
-        st.pensionB *= (1 + (pensionBData.indexationRente || 0.02));
+        st.pensionB *= (1 + (pensionBData.indexationRente != null ? pensionBData.indexationRente : 0.02));
       }
     }
 
@@ -2083,6 +2083,24 @@ function renderDonneesTab(tab) {
               <div class="stat-sub">Réduction permanente à 65 ans</div>
             </div>
           </div>
+          <hr class="divider" style="margin:16px 0;">
+          <div class="sep">&#x1F4CB; Montant réel du relevé (optionnel)</div>
+          <div class="grid grid-2" style="gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Rente annuelle réelle au début du versement ($/an)</label>
+              <input type="number" class="form-input"
+                value="${pd.overrideRente || ''}"
+                placeholder="${renteCalc ? Math.round(renteCalc.renteAuDebut) + ' (calculé)' : 'Ex: 35955'}"
+                oninput="setPension('${key}', 'overrideRente', this.value ? parseFloat(this.value) : null)">
+              <div class="form-hint">Laisser vide = calcul automatique · Utile si vous avez votre relevé Intact</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Statut</label>
+              <div class="form-computed" style="font-size:13px; color:${pd.overrideRente ? 'var(--teal)' : 'var(--text2)'};">
+                ${pd.overrideRente ? '✏️ ' + fmt(pd.overrideRente) + '/an — montant manuel actif' : '⚙️ Calcul automatique'}
+              </div>
+            </div>
+          </div>
           ` : `<div class="alert alert-info">Aucun régime PD configuré pour ${prenom}. Activez si applicable.</div>`}
         </div>`;
       break;
@@ -2924,6 +2942,10 @@ function recalculerTout() {
       coordRRQ: inp.pensionB.coordRRQ,
       ageDebutDecaissement: inp.pensionB.ageDebutDecaissement,
     });
+    // Override with actual amount from Intact statement if provided
+    if (inp.pensionB.overrideRente && inp.pensionB.overrideRente > 0) {
+      pensionBData.renteAuDebut = inp.pensionB.overrideRente;
+    }
   }
 
   // RRQ — utiliser override si disponible pour l'âge sélectionné, sinon calcul auto
