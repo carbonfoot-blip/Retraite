@@ -702,6 +702,7 @@ body {
             <th>REER B</th>
             <th>CELI A</th>
             <th>CELI B</th>
+            <th>Non enr.</th>
             <th>Capital fin</th>
           </tr>
         </thead>
@@ -3123,6 +3124,7 @@ function filtrerDetails() {
       <td>${fmtK(l.reerB)}</td>
       <td>${fmtK(l.celiA)}</td>
       <td>${fmtK(l.celiB)}</td>
+      <td>${fmtK(l.nonEnreg)}</td>
       <td class="${l.capitalFin<100&&l.enRetraite?'negative':'gold'}">${fmtK(l.capitalFin)}</td>
     </tr>`;
   }).join('');
