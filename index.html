@@ -3174,8 +3174,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadData();
-  reinitialiserBudget(false);
-  if (!localStorage.getItem('retraite_v2_budget')) reinitialiserBudget();
+  // Only reinitialise if no saved budget exists
+  if (!localStorage.getItem('retraite_v2_budget')) reinitialiserBudget(false);
   // Update nav brand with names
   function updateNavBrand() {
     const a = APP.inputs.prenomA || 'A';
