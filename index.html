@@ -891,9 +891,13 @@ function calculerPensionPD(p) {
     const penalite = Math.min(1.0, p.tauxReductionAnnuel * annesAvantSeuil);
     rente = renteAvantReduction * (1 - penalite);
   } else if (retraiteDiffereAvantSeuil) {
-    // Rente différée: retraite avant seuil mais versement plus tard → indexation pendant report
+    // Rente différée: retraite avant seuil mais versement plus tard
+    // Si indexationReport = 0 (ex: Intact post-2011), rente reste fixe pendant le report
     const anneesAttente = (p.ageDebutDecaissement || p.ageSansPenalite) - p.ageRetraite;
-    rente = renteAvantReduction * Math.pow(1 + (p.indexationReport || 0.02), anneesAttente);
+    const tauxReport = (p.indexationReport != null ? p.indexationReport : 0.02);
+    rente = tauxReport > 0
+      ? renteAvantReduction * Math.pow(1 + tauxReport, anneesAttente)
+      : renteAvantReduction; // 0% → montant fixe, pas de croissance pendant le report
   }
   // Si ageRetraite >= ageSansPenalite: aucune réduction
   return {
