@@ -438,6 +438,10 @@ body {
   padding: 6px 12px; background: var(--bg3);
   border-radius: 20px; border: 1px solid var(--border);
 }
+
+.lang-toggle { font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em; font-family: 'DM Sans', sans-serif; }
+.lang-toggle:hover { color: var(--gold); border-color: var(--gold); }
+.lang-toggle.active { color: var(--gold); background: rgba(201,168,76,0.12); border-color: var(--gold); }
 </style>
 </head>
 <body>
@@ -450,6 +454,7 @@ body {
   <button class="nav-tab" onclick="showSection('details')">📈 Détails</button>
   <div class="nav-actions">
     <span class="last-update" id="lastUpdate">—</span>
+    <button class="lang-toggle" id="lang-btn" onclick="toggleLang()">EN</button>
     <button class="btn-sm" onclick="confirmerReset()" style="color:var(--coral); border-color:rgba(232,101,74,0.3);">✕ Reset</button>
     <button class="btn-sm" onclick="exportData()">⬇ Export</button>
     <button class="btn-sm" onclick="document.getElementById('importFile').click()">⬆ Import</button>
@@ -1433,6 +1438,7 @@ function showSection(id) {
 }
 
 function showDonneesTab(tab, el) {
+  _currentDonneesTab = tab;
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
   if (el) el.classList.add('active');
   // Sync mobile tabs
@@ -3165,6 +3171,155 @@ function fmtK(n) {
 // ============================================================
 // BOOT
 // ============================================================
+
+// ============================================================
+// INTERNATIONALISATION (FR / EN)
+// ============================================================
+APP.lang = localStorage.getItem('retraite_lang') || 'fr';
+
+const LANG = {
+  fr: {
+    nav_budget:'&#x1F4B0; Budget', nav_donnees:'&#x1F4CB; Données',
+    nav_resultats:'&#x1F4CA; Résultats', nav_details:'&#x1F4C8; Détails',
+    th_annee:'Année', th_ageA:'Âge A', th_ageB:'Âge B',
+    th_capDebut:'Capital début', th_pensionA:'Pension A', th_pensionB:'Pension B',
+    th_heritage:'Héritage', th_travail:'Travail', th_impots:'Impôts',
+    th_impDecais:'Imp. décais.', th_revNet:'Revenu net', th_depenses:'Dépenses',
+    th_surplus:'Surplus/Déficit', th_nonEnr:'Non enr.', th_capFin:'Capital fin',
+    btn_recalcul:'&#x27F3; Recalculer', btn_reset:'&#x2715; Reset',
+    btn_export:'&#x2B07; Export', btn_import:'&#x2B06; Import', btn_csv:'&#x2B07; CSV',
+    btn_reset_budget:'&#x21BA; Réinitialiser défaut',
+    btn_add_cat:'+ Ajouter catégorie',
+    det_filter_all:'Toutes les années', det_filter_ret:'Retraite seulement',
+    det_filter_gogo:'Retraite pré-65', det_filter_slowgo:'Go-Go post-65',
+    det_filter_nogo:'Slow-Go / No-Go',
+    res_alert_ok:'&#x2705; Le capital est suffisant jusqu’à 100 ans pour les deux conjoints avec les hypothèses actuelles.',
+    res_capital_ok:'Capital disponible pour la succession ou les imprévus',
+    res_capital_epuise:'Capital épuisé avant 100 ans — revoir les hypothèses',
+    res_impots_title:'Impôts totaux payés à la retraite',
+    res_impots_decais:'dont impôts sur décaissements REER :',
+    col_poste:'Poste', col_mensuel:'Mensuel', col_annuel:'Annuel',
+    hypo_jusquen:'jusqu’en', hypo_puis:', puis disparaît',
+    hypo_note:'Ajouté au budget jusqu’en',
+    sidebar_phases:'Phases', sidebar_resume:'Résumé',
+    sidebar_budget_annuel:'Budget annuel', sidebar_budget_mensuel:'Budget mensuel',
+    sidebar_voiture:'Voiture',
+    sidebar_voiture_provision:'Provision remplacement ($/mois)',
+    phase_gogo:'Retraite pré-65', phase_slowgo:'Go-Go post-65', phase_nogo:'Slow-Go / No-Go',
+    rrq_title:'Régime de Rentes du Québec (RRQ)',
+    psv_title:'Pension de Sécurité de la Vieillesse (PSV)',
+    nav_profil:'&#x1F465; Profil du couple', nav_epargne:'&#x1F4BC; Épargne',
+    nav_pension_a:'&#x1F3DB; Pension — A', nav_pension_b:'&#x1F3DB; Pension — B',
+    nav_rrq:'&#x1F341; RRQ', nav_psv:'&#x1F3E5; PSV',
+    nav_hypotheses:'&#x2699;&#xFE0F; Hypothèses', nav_scenarios:'Scénarios',
+    btn_save_scenario:'+ Sauvegarder scénario',
+    scenario_aucun:'Aucun scénario sauvegardé',
+    confirm_reset:'⚠️ Êtes-vous sûr de vouloir tout effacer?\n\nToutes vos données seront supprimées définitivement.',
+    confirm_reset_done:'Données effacées.',
+    import_ok:'Import réussi!', import_err:"Erreur lors de l'import",
+    scenario_nom_prompt:'Nom du scénario:',
+  },
+  en: {
+    nav_budget:'&#x1F4B0; Budget', nav_donnees:'&#x1F4CB; Data',
+    nav_resultats:'&#x1F4CA; Results', nav_details:'&#x1F4C8; Details',
+    th_annee:'Year', th_ageA:'Age A', th_ageB:'Age B',
+    th_capDebut:'Capital start', th_pensionA:'Pension A', th_pensionB:'Pension B',
+    th_heritage:'Inheritance', th_travail:'Work income', th_impots:'Taxes',
+    th_impDecais:'Tax RRSP', th_revNet:'Net income', th_depenses:'Expenses',
+    th_surplus:'Surplus/Deficit', th_nonEnr:'Non-reg.', th_capFin:'Capital end',
+    btn_recalcul:'&#x27F3; Recalculate', btn_reset:'&#x2715; Reset',
+    btn_export:'&#x2B07; Export', btn_import:'&#x2B06; Import', btn_csv:'&#x2B07; CSV',
+    btn_reset_budget:'&#x21BA; Reset defaults',
+    btn_add_cat:'+ Add category',
+    det_filter_all:'All years', det_filter_ret:'Retirement only',
+    det_filter_gogo:'Pre-65 retirement', det_filter_slowgo:'Post-65 Go-Go',
+    det_filter_nogo:'Slow-Go / No-Go',
+    res_alert_ok:'&#x2705; Capital is sufficient to age 100 for both spouses with current assumptions.',
+    res_capital_ok:'Capital available for estate or emergencies',
+    res_capital_epuise:'Capital depleted before age 100 — review assumptions',
+    res_impots_title:'Total taxes paid in retirement',
+    res_impots_decais:'incl. taxes on RRSP withdrawals:',
+    col_poste:'Item', col_mensuel:'Monthly', col_annuel:'Annual',
+    hypo_jusquen:'until', hypo_puis:', then removed',
+    hypo_note:'Added to budget until',
+    sidebar_phases:'Phases', sidebar_resume:'Summary',
+    sidebar_budget_annuel:'Annual budget', sidebar_budget_mensuel:'Monthly budget',
+    sidebar_voiture:'Vehicle',
+    sidebar_voiture_provision:'Replacement provision ($/mo)',
+    phase_gogo:'Pre-65 retirement', phase_slowgo:'Post-65 Go-Go', phase_nogo:'Slow-Go / No-Go',
+    rrq_title:'Québec Pension Plan (QPP)',
+    psv_title:'Old Age Security (OAS)',
+    nav_profil:'&#x1F465; Couple profile', nav_epargne:'&#x1F4BC; Savings',
+    nav_pension_a:'&#x1F3DB; Pension — A', nav_pension_b:'&#x1F3DB; Pension — B',
+    nav_rrq:'&#x1F341; QPP', nav_psv:'&#x1F3E5; OAS',
+    nav_hypotheses:'&#x2699;&#xFE0F; Assumptions', nav_scenarios:'Scenarios',
+    btn_save_scenario:'+ Save scenario',
+    scenario_aucun:'No saved scenarios',
+    confirm_reset:'⚠️ Are you sure you want to clear everything?\n\nAll your data will be permanently deleted.',
+    confirm_reset_done:'Data cleared.',
+    import_ok:'Import successful!', import_err:'Error during import',
+    scenario_nom_prompt:'Scenario name:',
+  }
+};
+
+function t(key) {
+  const d = LANG[APP.lang] || LANG.fr;
+  return d[key] !== undefined ? d[key] : (LANG.fr[key] || key);
+}
+
+function toggleLang() {
+  APP.lang = APP.lang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('retraite_lang', APP.lang);
+  applyLang();
+}
+
+function applyLang() {
+  const btn = document.getElementById('lang-btn');
+  if (btn) {
+    btn.textContent = APP.lang === 'fr' ? 'EN' : 'FR';
+    btn.classList.toggle('active', APP.lang === 'en');
+  }
+  // Static i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    const val = t(el.getAttribute('data-i18n'));
+    el.innerHTML = val;
+  });
+  // Nav tabs
+  const navKeys = ['nav_budget','nav_donnees','nav_resultats','nav_details'];
+  document.querySelectorAll('.nav-tab').forEach(function(b,i){ if(navKeys[i]) b.innerHTML = t(navKeys[i]); });
+  // Table headers with data-i18n
+  document.querySelectorAll('th[data-i18n]').forEach(function(th) { th.textContent = t(th.getAttribute('data-i18n')); });
+  // Filter options
+  const filter = document.getElementById('filter-details');
+  if (filter) {
+    const fKeys = ['det_filter_all','det_filter_ret','det_filter_gogo','det_filter_slowgo','det_filter_nogo'];
+    Array.from(filter.options).forEach(function(o,i){ if(fKeys[i]) o.text = t(fKeys[i]); });
+  }
+  // Sidebar labels (donnees)
+  const sidebarItems = document.querySelectorAll('#section-donnees .sidebar-item');
+  const sKeys = ['nav_profil','nav_epargne','nav_pension_a','nav_pension_b','nav_rrq','nav_psv','nav_hypotheses'];
+  sidebarItems.forEach(function(el,i){ if(sKeys[i]) el.innerHTML = t(sKeys[i]); });
+  // Sidebar sections
+  document.querySelectorAll('#section-donnees .sidebar-section').forEach(function(el,i){
+    if(i===0) el.textContent = t('nav_scenarios');
+  });
+  // Mobile donnees tabs
+  const mobileTabKeys = ['nav_profil','nav_epargne','nav_pension_a','nav_pension_b','nav_rrq','nav_psv','nav_hypotheses'];
+  document.querySelectorAll('.donnees-tab-btn').forEach(function(b,i){
+    if(mobileTabKeys[i]) b.innerHTML = t(mobileTabKeys[i]);
+  });
+  // Re-render current section
+  const activeSection = document.querySelector('.section.active');
+  if (activeSection) {
+    if (activeSection.id === 'section-donnees') renderDonneesTab(_currentDonneesTab || 'profil');
+    if (activeSection.id === 'section-resultats') { setTimeout(renderResultats, 50); }
+    if (activeSection.id === 'section-details') renderDetails();
+  }
+  renderBudget();
+}
+
+let _currentDonneesTab = 'profil';
+
 document.addEventListener('DOMContentLoaded', () => {
   // Engine version — bump this when calculation formulas change
   // Forces automatic recalcul if user has cached results from old version
@@ -3193,6 +3348,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderScenariosList();
   recalculerTout();
   updateLastUpdate();
+  if (typeof applyLang === 'function') applyLang();
 });
 </script>
 </body>
