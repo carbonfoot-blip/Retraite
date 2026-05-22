@@ -2911,11 +2911,19 @@ function recalculerTout() {
   if (inp.pensionA?.active) {
     const anneeRetA = inp.anneeRetraiteA;
     const ageRetA = anneeRetA - inp.anneeNaissanceA;
+    const anneesAvantRetA = Math.max(0, inp.anneeRetraiteA - 2026);
+    const augA = inp.augmentationSalaire || 0;
+    const salFinalA = (inp.pensionA.salaire || 0) * Math.pow(1 + augA, anneesAvantRetA);
+    // Moyenne des 5 meilleures années (= 5 dernières avec croissance linéaire)
+    const moy5A = anneesAvantRetA >= 5
+      ? (salFinalA * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+augA), i), 0) / 5)
+      : salFinalA;
+    const salaireProjecteA = moy5A;
     pensionAData = calculerPensionPD({
       typeRegime: inp.pensionA.typeRegime,
       tauxAccumulation: inp.pensionA.tauxAccumulation,
       anneesServiceActuel: inp.pensionA.anneesServiceActuel,
-      salaire: inp.pensionA.salaire,
+      salaire: salaireProjecteA,
       anneeRetraite: anneeRetA,
       ageRetraite: ageRetA,
       ageSansPenalite: inp.pensionA.ageSansPenalite,
@@ -2932,11 +2940,19 @@ function recalculerTout() {
   if (inp.pensionB?.active) {
     const anneeRetB = inp.anneeRetraiteB;
     const ageRetB = anneeRetB - inp.anneeNaissanceB;
+    const anneesAvantRetB = Math.max(0, inp.anneeRetraiteB - 2026);
+    const augB = inp.augmentationSalaire || 0;
+    const salFinalB = (inp.pensionB.salaire || 0) * Math.pow(1 + augB, anneesAvantRetB);
+    // Moyenne des 5 meilleures années (= 5 dernières avec croissance linéaire)
+    const moy5B = anneesAvantRetB >= 5
+      ? (salFinalB * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+augB), i), 0) / 5)
+      : salFinalB;
+    const salaireProjecteB = moy5B;
     pensionBData = calculerPensionPD({
       typeRegime: inp.pensionB.typeRegime,
       tauxAccumulation: inp.pensionB.tauxAccumulation,
       anneesServiceActuel: inp.pensionB.anneesServiceActuel,
-      salaire: inp.pensionB.salaire,
+      salaire: salaireProjecteB,
       anneeRetraite: anneeRetB,
       ageRetraite: ageRetB,
       ageSansPenalite: inp.pensionB.ageSansPenalite,
