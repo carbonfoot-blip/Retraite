@@ -1977,11 +1977,17 @@ function renderDonneesTab(tab) {
       const ageRet = anneeRet - anneeNaiss;
       let renteCalc = null;
       if (pd.active) {
+        const _aug = inp.augmentationSalaire || 0;
+        const _anneesRet = Math.max(0, anneeRet - 2026);
+        const _salFinal = (pd.salaire || 0) * Math.pow(1 + _aug, _anneesRet);
+        const _salMoy5 = _anneesRet >= 5
+          ? (_salFinal * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+_aug), i), 0) / 5)
+          : _salFinal;
         renteCalc = calculerPensionPD({
           typeRegime: pd.typeRegime,
           tauxAccumulation: pd.tauxAccumulation,
           anneesServiceActuel: pd.anneesServiceActuel,
-          salaire: pd.salaire,
+          salaire: _salMoy5,
           anneeRetraite: anneeRet,
           ageRetraite: ageRet,
           ageSansPenalite: pd.ageSansPenalite,
@@ -2067,7 +2073,7 @@ function renderDonneesTab(tab) {
             <div class="stat-card stat-gold">
               <div class="stat-label">Rente de base</div>
               <div class="stat-value" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteBase) : '—'}</div>
-              <div class="stat-sub">${renteCalc ? `${renteCalc.tauxAccumulation*100||pd.tauxAccumulation*100}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × salaire` : ''}</div>
+              <div class="stat-sub">${renteCalc ? `${(pd.tauxAccumulation*100).toFixed(0)}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × ${fmt(Math.round(_salMoy5))}/an (moy. 5 ans)` : ''}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Réduction</div>
