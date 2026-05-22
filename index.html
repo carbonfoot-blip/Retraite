@@ -1975,14 +1975,14 @@ function renderDonneesTab(tab) {
       const anneeNaiss = isA ? inp.anneeNaissanceA : inp.anneeNaissanceB;
       const anneeRet = isA ? inp.anneeRetraiteA : inp.anneeRetraiteB;
       const ageRet = anneeRet - anneeNaiss;
+      const _aug = inp.augmentationSalaire || 0;
+      const _anneesRet = Math.max(0, anneeRet - 2026);
+      const _salFinal = (pd.salaire || 0) * Math.pow(1 + _aug, _anneesRet);
+      const _salMoy5 = _anneesRet >= 5
+        ? (_salFinal * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+_aug), i), 0) / 5)
+        : _salFinal;
       let renteCalc = null;
       if (pd.active) {
-        const _aug = inp.augmentationSalaire || 0;
-        const _anneesRet = Math.max(0, anneeRet - 2026);
-        const _salFinal = (pd.salaire || 0) * Math.pow(1 + _aug, _anneesRet);
-        const _salMoy5 = _anneesRet >= 5
-          ? (_salFinal * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+_aug), i), 0) / 5)
-          : _salFinal;
         renteCalc = calculerPensionPD({
           typeRegime: pd.typeRegime,
           tauxAccumulation: pd.tauxAccumulation,
