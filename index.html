@@ -1481,11 +1481,11 @@ function showSection(id) {
   const mbn = document.getElementById('mbn-' + id);
   if (mbn) mbn.classList.add('active');
   if (id === 'resultats') {
-    if (!APP.resultats) recalculerTout();
+    recalculerTout();
     setTimeout(function() { requestAnimationFrame(renderResultats); }, 50);
   }
   if (id === 'details') {
-    if (!APP.resultats) recalculerTout();
+    recalculerTout();
     setTimeout(renderDetails, 50);
   }
 }
@@ -1600,20 +1600,25 @@ function renderBudget() {
         jusqLabel.style.cssText = 'font-size:10px; color:var(--text3); text-align:right; white-space:nowrap;';
         jusqLabel.textContent = 'jusqu’en';
 
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:10px; color:var(--coral); padding:1px 0 4px;';
+        note.textContent = '* Ajouté au budget jusqu’en ' + (item.finAnnee||2037) + ', puis disparaît';
+
         const yInp = document.createElement('input');
         yInp.type = 'number'; yInp.className = 'budget-input';
         yInp.value = item.finAnnee || 2037;
         yInp.min = '2026'; yInp.max = '2060';
-        yInp.addEventListener('input', (function(c,i){return function(){
+        yInp.addEventListener('input', (function(c,i,noteEl){return function(){
           const yr = parseInt(this.value) || 2037;
           ['gogo','slowgo','nogo'].forEach(function(ph){
             if(APP.budget[ph] && APP.budget[ph][c] && APP.budget[ph][c].items[i])
               APP.budget[ph][c].items[i].finAnnee = yr;
           });
           APP.inputs.anneeFinHypotheque = yr;
+          if (noteEl) noteEl.textContent = '* Ajouté au budget jusqu’en ' + yr + ', puis disparaît';
           clearTimeout(window._budgetSaveTimer);
           window._budgetSaveTimer = setTimeout(saveData, 600);
-        };})(catIdx,itemIdx));
+        };})(catIdx,itemIdx,note));
 
         const annuelDiv = document.createElement('div');
         annuelDiv.id = cId; annuelDiv.className = 'budget-computed';
@@ -1628,10 +1633,6 @@ function renderBudget() {
         hypoRow.appendChild(jusqLabel); hypoRow.appendChild(yInp);
         hypoRow.appendChild(annuelDiv); hypoRow.appendChild(delBtn);
         hypoWrap.appendChild(hypoRow);
-
-        const note = document.createElement('div');
-        note.style.cssText = 'font-size:10px; color:var(--coral); padding:1px 0 4px;';
-        note.textContent = '* Ajouté au budget jusqu’en ' + (item.finAnnee||2037) + ', puis disparaît';
         hypoWrap.appendChild(note);
         catDiv.appendChild(hypoWrap);
 
@@ -1758,23 +1759,23 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">Année de naissance</label>
                 <input type="number" class="form-input" value="${inp.anneeNaissanceA}"
-                  oninput="setInp('anneeNaissanceA',parseInt(this.value))">
+                  oninput="setInp('anneeNaissanceA',parseInt(this.value)||inp.anneeNaissanceA)">
               </div>
               <div class="form-group">
                 <label class="form-label">Âge actuel</label>
-                <div class="form-computed">${anneeCalc - inp.anneeNaissanceA} ans</div>
+                <div class="form-computed" id="profil-age-actuel-A">${anneeCalc - inp.anneeNaissanceA} ans</div>
               </div>
               <hr class="divider">
-              <div class="sep">Scénario retraite — ${inp.prenomA}</div>
-              <div class="scenario-btns">
+              <div class="sep" id="profil-sep-scen-A">Scénario retraite — ${inp.prenomA}</div>
+              <div class="scenario-btns" id="profil-scen-btns-A">
                 ${[1,3,5].map(n => `<button class="scenario-btn ${inp.anneeRetraiteA === anneeCalc+n?'active':''}"
-                  onclick="setScenarioRetraite('A',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
+                  data-years="${n}" onclick="setScenarioRetraite('A',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
               </div>
               <div class="form-group">
                 <label class="form-label">Année de retraite (valeur exacte)</label>
-                <input type="number" class="form-input" value="${inp.anneeRetraiteA}"
-                  oninput="setInp('anneeRetraiteA',parseInt(this.value)); renderDonneesTab('profil')">
-                <div class="form-hint">Dans ${inp.anneeRetraiteA - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceA + (inp.anneeRetraiteA - anneeCalc)} ans</div>
+                <input type="number" class="form-input" id="profil-inp-ret-A" value="${inp.anneeRetraiteA}"
+                  oninput="setInp('anneeRetraiteA',parseInt(this.value)||inp.anneeRetraiteA)">
+                <div class="form-hint" id="profil-hint-ret-A">Dans ${inp.anneeRetraiteA - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceA + (inp.anneeRetraiteA - anneeCalc)} ans</div>
               </div>
             </div>
           </div>
@@ -1789,23 +1790,23 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">Année de naissance</label>
                 <input type="number" class="form-input" value="${inp.anneeNaissanceB}"
-                  oninput="setInp('anneeNaissanceB',parseInt(this.value))">
+                  oninput="setInp('anneeNaissanceB',parseInt(this.value)||inp.anneeNaissanceB)">
               </div>
               <div class="form-group">
                 <label class="form-label">Âge actuel</label>
-                <div class="form-computed">${anneeCalc - inp.anneeNaissanceB} ans</div>
+                <div class="form-computed" id="profil-age-actuel-B">${anneeCalc - inp.anneeNaissanceB} ans</div>
               </div>
               <hr class="divider">
-              <div class="sep">Scénario retraite — ${inp.prenomB}</div>
-              <div class="scenario-btns">
+              <div class="sep" id="profil-sep-scen-B">Scénario retraite — ${inp.prenomB}</div>
+              <div class="scenario-btns" id="profil-scen-btns-B">
                 ${[1,3,5].map(n => `<button class="scenario-btn ${inp.anneeRetraiteB === anneeCalc+n?'active':''}"
-                  onclick="setScenarioRetraite('B',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
+                  data-years="${n}" onclick="setScenarioRetraite('B',${n})">+${n} an${n>1?'s':''}</button>`).join('')}
               </div>
               <div class="form-group">
                 <label class="form-label">Année de retraite (valeur exacte)</label>
-                <input type="number" class="form-input" value="${inp.anneeRetraiteB}"
-                  oninput="setInp('anneeRetraiteB',parseInt(this.value)); renderDonneesTab('profil')">
-                <div class="form-hint">Dans ${inp.anneeRetraiteB - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceB + (inp.anneeRetraiteB - anneeCalc)} ans</div>
+                <input type="number" class="form-input" id="profil-inp-ret-B" value="${inp.anneeRetraiteB}"
+                  oninput="setInp('anneeRetraiteB',parseInt(this.value)||inp.anneeRetraiteB)">
+                <div class="form-hint" id="profil-hint-ret-B">Dans ${inp.anneeRetraiteB - anneeCalc} an(s) — à ${anneeCalc - inp.anneeNaissanceB + (inp.anneeRetraiteB - anneeCalc)} ans</div>
               </div>
             </div>
           </div>
@@ -1829,7 +1830,7 @@ function renderDonneesTab(tab) {
             <div class="form-group">
               <label class="form-label">Indexation location (%/an)</label>
               <input type="number" class="form-input" step="0.01" value="${(inp.indexationLocation*100).toFixed(1)}"
-                oninput="setInp('indexationLocation',parseFloat(this.value)/100||0.02)">
+                oninput="setInp('indexationLocation',isNaN(parseFloat(this.value))?0.02:parseFloat(this.value)/100)">
             </div>
           </div>
         </div>`;
@@ -1881,8 +1882,8 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">% en REER (du total épargne)</label>
                 <input type="number" class="form-input" step="1" value="${Math.round(inp.pctReerA*100)}"
-                  oninput="setInp('pctReerA',parseFloat(this.value)/100||0.18)">
-                <div class="form-hint">REER: ${fmt(inp.epargneAnnuelleA*inp.pctReerA)} | CELI: ${fmt(inp.epargneAnnuelleA*(1-inp.pctReerA))}</div>
+                  oninput="setInp('pctReerA',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
+                <div class="form-hint" id="epargne-hint-reer-A">REER: ${fmt(inp.epargneAnnuelleA*inp.pctReerA)} | CELI: ${fmt(inp.epargneAnnuelleA*(1-inp.pctReerA))}</div>
               </div>
             </div>
           </div>
@@ -1922,8 +1923,8 @@ function renderDonneesTab(tab) {
               <div class="form-group">
                 <label class="form-label">% en REER (du total épargne)</label>
                 <input type="number" class="form-input" step="1" value="${Math.round(inp.pctReerB*100)}"
-                  oninput="setInp('pctReerB',parseFloat(this.value)/100||0.05)">
-                <div class="form-hint">REER: ${fmt(inp.epargneAnnuelleB*inp.pctReerB)} | CELI: ${fmt(inp.epargneAnnuelleB*(1-inp.pctReerB))}</div>
+                  oninput="setInp('pctReerB',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
+                <div class="form-hint" id="epargne-hint-reer-B">REER: ${fmt(inp.epargneAnnuelleB*inp.pctReerB)} | CELI: ${fmt(inp.epargneAnnuelleB*(1-inp.pctReerB))}</div>
               </div>
             </div>
           </div>
@@ -2019,7 +2020,7 @@ function renderDonneesTab(tab) {
             <div class="form-group">
               <label class="form-label">Taux d'accumulation (%/an)</label>
               <input type="number" class="form-input" step="0.1" value="${(pd.tauxAccumulation*100).toFixed(1)}"
-                oninput="setPension('${key}','tauxAccumulation',parseFloat(this.value)/100)">
+                oninput="setPension('${key}','tauxAccumulation',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
               <div class="form-hint">RREGOP: 2% | Privé typique: 1% à 2%</div>
             </div>
             <div class="form-group">
@@ -2041,18 +2042,18 @@ function renderDonneesTab(tab) {
             <div class="form-group">
               <label class="form-label">Réduction par an d'anticipation (%)</label>
               <input type="number" class="form-input" step="0.5" value="${(pd.tauxReductionAnnuel*100).toFixed(1)}"
-                oninput="setPension('${key}','tauxReductionAnnuel',parseFloat(this.value)/100)">
+                oninput="setPension('${key}','tauxReductionAnnuel',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
             </div>
             <div class="form-group">
               <label class="form-label">Indexation pendant le report (rente différée, %)</label>
               <input type="number" class="form-input" step="0.1" value="${(pd.indexationReport*100).toFixed(1)}"
-                oninput="setPension('${key}','indexationReport',parseFloat(this.value)/100)">
+                oninput="setPension('${key}','indexationReport',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
               <div class="form-hint">S'applique si arrêt avant 55 ans et rente différée</div>
             </div>
             <div class="form-group">
               <label class="form-label">Indexation après versement (%/an)</label>
               <input type="number" class="form-input" step="0.1" value="${(pd.indexationRente*100).toFixed(1)}"
-                oninput="setPension('${key}','indexationRente',parseFloat(this.value)/100)">
+                oninput="setPension('${key}','indexationRente',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
             </div>
             <div class="form-group">
               <label class="form-label">Âge début décaissement</label>
@@ -2072,24 +2073,24 @@ function renderDonneesTab(tab) {
           <div class="grid grid-4" style="gap:12px;">
             <div class="stat-card stat-gold">
               <div class="stat-label">Rente de base</div>
-              <div class="stat-value" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteBase) : '—'}</div>
-              <div class="stat-sub">${renteCalc ? `${(pd.tauxAccumulation*100).toFixed(0)}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × ${fmt(Math.round(_salMoy5))}/an (moy. 5 ans)` : ''}</div>
+              <div class="stat-value" id="pension-stat-base-val" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteBase) : '—'}</div>
+              <div class="stat-sub" id="pension-stat-base-sub">${renteCalc ? `${(pd.tauxAccumulation*100).toFixed(0)}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × ${fmt(Math.round(_salMoy5))}/an (moy. 5 ans)` : ''}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Réduction</div>
-              <div class="stat-value" style="font-size:18px; color:${renteCalc?.reduction>0?'var(--coral)':'var(--green)'};">
+              <div class="stat-value" id="pension-stat-red-val" style="font-size:18px; color:${renteCalc?.reduction>0?'var(--coral)':'var(--green)'};">
                 ${renteCalc ? (renteCalc.reduction > 0 ? `-${(renteCalc.reduction*100).toFixed(0)}%` : 'Aucune') : '—'}
               </div>
-              <div class="stat-sub">${ageRet} ans vs ${pd.ageSansPenalite} ans sans pénalité</div>
+              <div class="stat-sub" id="pension-stat-red-sub">${ageRet} ans vs ${pd.ageSansPenalite} ans sans pénalité</div>
             </div>
             <div class="stat-card stat-green">
               <div class="stat-label">Rente au début</div>
-              <div class="stat-value" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteAuDebut) : '—'}</div>
-              <div class="stat-sub">À ${pd.ageDebutDecaissement} ans</div>
+              <div class="stat-value" id="pension-stat-deb-val" style="font-size:18px;">${renteCalc ? fmt(renteCalc.renteAuDebut) : '—'}</div>
+              <div class="stat-sub" id="pension-stat-deb-sub">À ${pd.ageDebutDecaissement} ans</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Coordination RRQ (65 ans)</div>
-              <div class="stat-value" style="font-size:18px; color:var(--coral);">${renteCalc ? fmt(renteCalc.coordMontant) : '—'}</div>
+              <div class="stat-value" id="pension-stat-coord-val" style="font-size:18px; color:var(--coral);">${renteCalc ? fmt(renteCalc.coordMontant) : '—'}</div>
               <div class="stat-sub">Réduction permanente à 65 ans</div>
             </div>
           </div>
@@ -2098,7 +2099,7 @@ function renderDonneesTab(tab) {
           <div class="grid grid-2" style="gap:12px;">
             <div class="form-group">
               <label class="form-label">Rente annuelle réelle au début du versement ($/an)</label>
-              <input type="number" class="form-input"
+              <input type="number" class="form-input" id="pension-override-input"
                 value="${pd.overrideRente || ''}"
                 placeholder="${renteCalc ? Math.round(renteCalc.renteAuDebut) + ' (calculé)' : 'Ex: 35955'}"
                 oninput="setPension('${key}', 'overrideRente', this.value ? parseFloat(this.value) : null)">
@@ -2106,7 +2107,7 @@ function renderDonneesTab(tab) {
             </div>
             <div class="form-group">
               <label class="form-label">Statut</label>
-              <div class="form-computed" style="font-size:13px; color:${pd.overrideRente ? 'var(--teal)' : 'var(--text2)'};">
+              <div class="form-computed" id="pension-override-status" style="font-size:13px; color:${pd.overrideRente ? 'var(--teal)' : 'var(--text2)'};">
                 ${pd.overrideRente ? '✏️ ' + fmt(pd.overrideRente) + '/an — montant manuel actif' : '⚙️ Calcul automatique'}
               </div>
             </div>
@@ -2186,72 +2187,10 @@ function renderDonneesTab(tab) {
 
       // What to look for
       const hint = document.createElement('div');
+      hint.id = 'rrq-verif-hint';
       hint.className = 'alert alert-info';
-      hint.style.cssText = 'margin-top:10px; font-size:12px;';
-
-      const ageRRQA = rrqA.ageDemandeRRQ;
-      const ageRRQB = rrqB.ageDemandeRRQ;
-      const anneeRRQA = inp.anneeNaissanceA + ageRRQA;
-      const anneeRRQB = inp.anneeNaissanceB + ageRRQB;
-      const montantA = optsA['rrq' + ageRRQA];
-      const montantB = optsB['rrq' + ageRRQB];
-      const ovA = rrqA.overrides && rrqA.overrides[ageRRQA];
-      const ovB = rrqB.overrides && rrqB.overrides[ageRRQB];
-      // Années de cotisation réelles
-      const anneesCotA = Math.max(0, Math.min(ageCessA, 65) - 18);
-      const anneesCotB = Math.max(0, Math.min(ageCessB, 65) - 18);
-      // Montant en dollars d'aujourd'hui (2026) pour comparaison avec SimulR
-      const montantA_2026 = Math.round(montantA / Math.pow(1.02, Math.max(0, ageRRQA - (2026 - inp.anneeNaissanceA))));
-      const montantB_2026 = Math.round(montantB / Math.pow(1.02, Math.max(0, ageRRQB - (2026 - inp.anneeNaissanceB))));
-
-      // Build hint with DOM to avoid HTML rendering issues
-      hint.style.lineHeight = '1.7';
-      const title = document.createElement('strong'); title.textContent = 'Résumé des montants calculés :';
-      hint.appendChild(title);
-
-      function addRRQRow(prenom, anneeCot, ageRRQ, anneeRRQ, montant, montant2026, ov) {
-        const row = document.createElement('div');
-        row.style.cssText = 'margin:8px 0; padding:8px 10px; background:var(--bg3); border-radius:6px;';
-        const nameSpan = document.createElement('strong'); nameSpan.textContent = prenom;
-        const desc = document.createElement('span');
-        desc.style.color = 'var(--text2)';
-        desc.textContent = ' — ' + anneeCot + ' ans cotisés — RRQ demandé à ' + ageRRQ + ' ans (en ' + anneeRRQ + ')';
-        row.appendChild(nameSpan);
-        row.appendChild(desc);
-
-        const vals = document.createElement('div');
-        vals.style.cssText = 'margin-top:4px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;';
-
-        const futureVal = document.createElement('span');
-        futureVal.innerHTML = '<strong style="color:var(--gold)">' + fmt(montant) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars ' + anneeRRQ + ' (ce que tu recevras)</span>';
-
-        const presentVal = document.createElement('span');
-        presentVal.innerHTML = '<strong style="color:var(--text2)">' + fmt(montant2026) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars 2026 (référence SimulR)</span>';
-
-        vals.appendChild(futureVal);
-        vals.appendChild(presentVal);
-
-        if (ov) {
-          const manuelVal = document.createElement('span');
-          manuelVal.innerHTML = '<span style="color:var(--teal)">✏️ Manuel: <strong>' + fmt(parseFloat(ov)) + '</strong></span>';
-          vals.appendChild(manuelVal);
-        }
-        row.appendChild(vals);
-        hint.appendChild(row);
-      }
-
-      addRRQRow(inp.prenomA, anneesCotA, ageRRQA, anneeRRQA, montantA, montantA_2026, ovA);
-      addRRQRow(inp.prenomB, anneesCotB, ageRRQB, anneeRRQB, montantB, montantB_2026, ovB);
-
-      const note = document.createElement('div');
-      note.style.cssText = 'margin-top:10px; font-size:11px; color:var(--text3); line-height:1.5;';
-      note.textContent = 'SimulR affiche en dollars 2026. L\'application projette en dollars futurs indexés pour comparer avec votre budget futur. Les deux sont corrects.';
-      hint.appendChild(note);
-
-      const cta = document.createElement('div');
-      cta.style.cssText = 'margin-top:8px; font-size:12px; color:var(--text2);';
-      cta.innerHTML = 'Si le montant officiel diffère → cliquez <strong>"▼ Entrer mes montants réels"</strong> dans la carte correspondante ci-dessous.';
-      hint.appendChild(cta);
+      hint.style.cssText = 'margin-top:10px; font-size:12px; line-height:1.7;';
+      populateRRQVerifHint(hint);
 
       steps.appendChild(hint);
       verif.appendChild(steps);
@@ -2321,25 +2260,10 @@ function renderDonneesTab(tab) {
 
       // Current amounts hint
       const hintPSV = document.createElement('div');
+      hintPSV.id = 'psv-verif-hint';
       hintPSV.className = 'alert alert-info';
       hintPSV.style.cssText = 'margin-top:10px; font-size:12px;';
-
-      const agePSVA = inp.psvA ? inp.psvA.ageDemande : 65;
-      const agePSVB = inp.psvB ? inp.psvB.ageDemande : 65;
-      const mPSVA = agePSVA === 65 ? psvA_65 : psvA_70;
-      const mPSVB = agePSVB === 65 ? psvB_65 : psvB_70;
-      const ovPSVA = inp.psvA && inp.psvA['override' + agePSVA];
-      const ovPSVB = inp.psvB && inp.psvB['override' + agePSVB];
-
-      hintPSV.innerHTML = "<strong>Montants dans l'app (en dollars 2026 indexés) :</strong><br>" +
-        '• <strong>' + inp.prenomA + '</strong> à ' + agePSVA + ' ans → ' +
-          'App calcule <strong>' + fmt(mPSVA) + '/an</strong>' +
-          (ovPSVA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVA)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
-        '• <strong>' + inp.prenomB + '</strong> à ' + agePSVB + ' ans → ' +
-          'App calcule <strong>' + fmt(mPSVB) + '/an</strong>' +
-          (ovPSVB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVB)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
-        '<br><strong>Note :</strong> la PSV est garantie si vous avez résidé au Canada 40+ ans après 18 ans. ' +
-        'Moins de 40 ans → montant réduit proportionnellement (1/40 par année manquante).';
+      populatePSVVerifHint(hintPSV);
 
       stepsPSV.appendChild(hintPSV);
       verifPSV.appendChild(stepsPSV);
@@ -2356,7 +2280,6 @@ function renderDonneesTab(tab) {
 
     case 'hypotheses': {
       const heritages = inp.heritages || [];
-      // Build heritages list using DOM to avoid string quoting issues
       function buildHeritagesList(hList, inpData) {
         if (hList.length === 0) {
           return '<div style="color:var(--text3); font-size:13px; padding:8px 0;">Aucun héritage configuré.</div>';
@@ -2364,37 +2287,27 @@ function renderDonneesTab(tab) {
         return hList.map(function(h, i) {
           const ageA = h.annee - inpData.anneeNaissanceA;
           const ageB = h.annee - inpData.anneeNaissanceB;
-          const row = document.createElement('div');
-          row.style.cssText = 'display:grid; grid-template-columns:1fr 140px 140px auto; gap:10px; align-items:end; padding:8px 0; border-bottom:1px solid var(--border);';
-          // Description
-          const fg1 = document.createElement('div'); fg1.className = 'form-group'; fg1.style.margin = '0';
-          const l1 = document.createElement('label'); l1.className = 'form-label'; l1.textContent = 'Description';
-          const i1 = document.createElement('input'); i1.type = 'text'; i1.className = 'form-input';
-          i1.value = h.description || ''; i1.placeholder = 'Ex: Héritage parental';
-          i1.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'description',this.value); }; })(i));
-          fg1.appendChild(l1); fg1.appendChild(i1);
-          // Année
-          const fg2 = document.createElement('div'); fg2.className = 'form-group'; fg2.style.margin = '0';
-          const l2 = document.createElement('label'); l2.className = 'form-label'; l2.textContent = 'Année';
-          const i2 = document.createElement('input'); i2.type = 'number'; i2.className = 'form-input';
-          i2.value = h.annee; i2.min = '2026'; i2.max = '2090';
-          i2.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'annee',parseInt(this.value)||2050); }; })(i));
-          const h2 = document.createElement('div'); h2.className = 'form-hint';
-          h2.textContent = inpData.prenomA + ': ' + ageA + ' ans | ' + inpData.prenomB + ': ' + ageB + ' ans';
-          fg2.appendChild(l2); fg2.appendChild(i2); fg2.appendChild(h2);
-          // Montant
-          const fg3 = document.createElement('div'); fg3.className = 'form-group'; fg3.style.margin = '0';
-          const l3 = document.createElement('label'); l3.className = 'form-label'; l3.textContent = 'Montant net ($)';
-          const i3 = document.createElement('input'); i3.type = 'number'; i3.className = 'form-input';
-          i3.value = h.montant;
-          i3.addEventListener('input', (function(n){ return function(){ updateHeritage(n,'montant',parseFloat(this.value)||0); }; })(i));
-          const h3 = document.createElement('div'); h3.className = 'form-hint'; h3.textContent = 'Montant net après impôts succession';
-          fg3.appendChild(l3); fg3.appendChild(i3); fg3.appendChild(h3);
-          // Delete
-          const db = document.createElement('button'); db.className = 'del-btn'; db.style.marginBottom = '2px'; db.textContent = '×';
-          db.addEventListener('click', (function(n){ return function(){ supprimerHeritage(n); }; })(i));
-          row.appendChild(fg1); row.appendChild(fg2); row.appendChild(fg3); row.appendChild(db);
-          return row.outerHTML;
+          const safeDesc = String(h.description || '').replace(/"/g, '&quot;');
+          return `<div style="display:grid; grid-template-columns:1fr 140px 140px auto; gap:10px; align-items:end; padding:8px 0; border-bottom:1px solid var(--border);">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-input" value="${safeDesc}" placeholder="Ex: Héritage parental"
+                oninput="updateHeritage(${i},'description',this.value)">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Année</label>
+              <input type="number" class="form-input" value="${h.annee}" min="2026" max="2090"
+                oninput="updateHeritage(${i},'annee',parseInt(this.value)||2050)">
+              <div class="form-hint" id="heritage-hint-${i}">${inpData.prenomA}: ${ageA} ans | ${inpData.prenomB}: ${ageB} ans</div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Montant net ($)</label>
+              <input type="number" class="form-input" value="${h.montant}"
+                oninput="updateHeritage(${i},'montant',parseFloat(this.value)||0)">
+              <div class="form-hint">Montant net après impôts succession</div>
+            </div>
+            <button class="del-btn" style="margin-bottom:2px;" onclick="supprimerHeritage(${i})">×</button>
+          </div>`;
         }).join('');
       }
       const heritagesHTML = buildHeritagesList(heritages, inp);
@@ -2407,25 +2320,25 @@ function renderDonneesTab(tab) {
             <div class="form-group">
               <label class="form-label">Rendement — phase accumulation (%)</label>
               <input type="number" class="form-input" step="0.5" value="${(inp.rendementAccumulation*100).toFixed(1)}"
-                oninput="setInp('rendementAccumulation',parseFloat(this.value)/100)">
+                oninput="setInp('rendementAccumulation',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
               <div class="form-hint">Historique long terme: 6–7%</div>
             </div>
             <div class="form-group">
               <label class="form-label">Rendement — phase retraite (%)</label>
               <input type="number" class="form-input" step="0.5" value="${(inp.rendementRetraite*100).toFixed(1)}"
-                oninput="setInp('rendementRetraite',parseFloat(this.value)/100)">
+                oninput="setInp('rendementRetraite',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
               <div class="form-hint">Conservateur: 3–4% | Modéré: 4–5%</div>
             </div>
             <div class="form-group">
               <label class="form-label">Inflation annuelle (%)</label>
               <input type="number" class="form-input" step="0.1" value="${(inp.inflation*100).toFixed(1)}"
-                oninput="setInp('inflation',parseFloat(this.value)/100)">
+                oninput="setInp('inflation',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
               <div class="form-hint">Cible BdC: 2% | Actuel: ~2.5%</div>
             </div>
             <div class="form-group">
               <label class="form-label">Augmentation salaire annuelle (%)</label>
               <input type="number" class="form-input" step="0.5" value="${(inp.augmentationSalaire*100).toFixed(1)}"
-                oninput="setInp('augmentationSalaire',parseFloat(this.value)/100)">
+                oninput="setInp('augmentationSalaire',isNaN(parseFloat(this.value))?0:parseFloat(this.value)/100)">
             </div>
           </div>
         </div>
@@ -2446,6 +2359,105 @@ function renderDonneesTab(tab) {
       break;
     }
   }
+}
+
+function populateRRQVerifHint(hint) {
+  if (!hint) return;
+  const inp = APP.inputs;
+  const rrqA = inp.rrqA;
+  const rrqB = inp.rrqB;
+  const ageCessA = inp.anneeRetraiteA - inp.anneeNaissanceA;
+  const optsA = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceA, anneeCalc: 2026,
+    revenusCotisesMoyens: rrqA.revenusCotisesMoyens, ageCessationCotisation: ageCessA });
+  const ageCessB = inp.anneeRetraiteB - inp.anneeNaissanceB;
+  const optsB = calculerOptionsRRQ({ anneeNaissance: inp.anneeNaissanceB, anneeCalc: 2026,
+    revenusCotisesMoyens: rrqB.revenusCotisesMoyens, ageCessationCotisation: ageCessB });
+
+  const ageRRQA = rrqA.ageDemandeRRQ;
+  const ageRRQB = rrqB.ageDemandeRRQ;
+  const anneeRRQA = inp.anneeNaissanceA + ageRRQA;
+  const anneeRRQB = inp.anneeNaissanceB + ageRRQB;
+  const montantA = optsA['rrq' + ageRRQA];
+  const montantB = optsB['rrq' + ageRRQB];
+  const ovA = rrqA.overrides && rrqA.overrides[ageRRQA];
+  const ovB = rrqB.overrides && rrqB.overrides[ageRRQB];
+  const anneesCotA = Math.max(0, Math.min(ageCessA, 65) - 18);
+  const anneesCotB = Math.max(0, Math.min(ageCessB, 65) - 18);
+  const montantA_2026 = Math.round(montantA / Math.pow(1.02, Math.max(0, ageRRQA - (2026 - inp.anneeNaissanceA))));
+  const montantB_2026 = Math.round(montantB / Math.pow(1.02, Math.max(0, ageRRQB - (2026 - inp.anneeNaissanceB))));
+
+  hint.innerHTML = '';
+  const title = document.createElement('strong'); title.textContent = 'Résumé des montants calculés :';
+  hint.appendChild(title);
+
+  function addRRQRow(prenom, anneeCot, ageRRQ, anneeRRQ, montant, montant2026, ov) {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin:8px 0; padding:8px 10px; background:var(--bg3); border-radius:6px;';
+    const nameSpan = document.createElement('strong'); nameSpan.textContent = prenom;
+    const desc = document.createElement('span');
+    desc.style.color = 'var(--text2)';
+    desc.textContent = ' — ' + anneeCot + ' ans cotisés — RRQ demandé à ' + ageRRQ + ' ans (en ' + anneeRRQ + ')';
+    row.appendChild(nameSpan);
+    row.appendChild(desc);
+
+    const vals = document.createElement('div');
+    vals.style.cssText = 'margin-top:4px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;';
+
+    const futureVal = document.createElement('span');
+    futureVal.innerHTML = '<strong style="color:var(--gold)">' + fmt(montant) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars ' + anneeRRQ + ' (ce que tu recevras)</span>';
+
+    const presentVal = document.createElement('span');
+    presentVal.innerHTML = '<strong style="color:var(--text2)">' + fmt(montant2026) + '</strong> <span style="color:var(--text3); font-size:11px;">en dollars 2026 (référence SimulR)</span>';
+
+    vals.appendChild(futureVal);
+    vals.appendChild(presentVal);
+
+    if (ov) {
+      const manuelVal = document.createElement('span');
+      manuelVal.innerHTML = '<span style="color:var(--teal)">✏️ Manuel: <strong>' + fmt(parseFloat(ov)) + '</strong></span>';
+      vals.appendChild(manuelVal);
+    }
+    row.appendChild(vals);
+    hint.appendChild(row);
+  }
+
+  addRRQRow(inp.prenomA, anneesCotA, ageRRQA, anneeRRQA, montantA, montantA_2026, ovA);
+  addRRQRow(inp.prenomB, anneesCotB, ageRRQB, anneeRRQB, montantB, montantB_2026, ovB);
+
+  const note = document.createElement('div');
+  note.style.cssText = 'margin-top:10px; font-size:11px; color:var(--text3); line-height:1.5;';
+  note.textContent = 'SimulR affiche en dollars 2026. L\'application projette en dollars futurs indexés pour comparer avec votre budget futur. Les deux sont corrects.';
+  hint.appendChild(note);
+
+  const cta = document.createElement('div');
+  cta.style.cssText = 'margin-top:8px; font-size:12px; color:var(--text2);';
+  cta.innerHTML = 'Si le montant officiel diffère → cliquez <strong>"▼ Entrer mes montants réels"</strong> dans la carte correspondante ci-dessous.';
+  hint.appendChild(cta);
+}
+
+function populatePSVVerifHint(hintPSV) {
+  if (!hintPSV) return;
+  const inp = APP.inputs;
+  const psvA_65 = calculerPSV(inp.anneeNaissanceA, 2026, 65);
+  const psvA_70 = calculerPSV(inp.anneeNaissanceA, 2026, 70);
+  const psvB_65 = calculerPSV(inp.anneeNaissanceB, 2026, 65);
+  const psvB_70 = calculerPSV(inp.anneeNaissanceB, 2026, 70);
+  const agePSVA = inp.psvA ? inp.psvA.ageDemande : 65;
+  const agePSVB = inp.psvB ? inp.psvB.ageDemande : 65;
+  const mPSVA = agePSVA === 65 ? psvA_65 : psvA_70;
+  const mPSVB = agePSVB === 65 ? psvB_65 : psvB_70;
+  const ovPSVA = inp.psvA && inp.psvA['override' + agePSVA];
+  const ovPSVB = inp.psvB && inp.psvB['override' + agePSVB];
+
+  hintPSV.innerHTML = "<strong>Montants dans l'app (en dollars 2026 indexés) :</strong><br>" +
+    '• <strong>' + inp.prenomA + '</strong> à ' + agePSVA + ' ans → ' +
+      'App calcule <strong>' + fmt(mPSVA) + '/an</strong>' +
+      (ovPSVA ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVA)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+    '• <strong>' + inp.prenomB + '</strong> à ' + agePSVB + ' ans → ' +
+      'App calcule <strong>' + fmt(mPSVB) + '/an</strong>' +
+      (ovPSVB ? ' | <span style="color:var(--teal)">Manuel: ' + fmt(parseFloat(ovPSVB)) + '</span>' : ' <span style="color:var(--text3)">(à confirmer)</span>') + '<br>' +
+    '<br><strong>Note :</strong> la PSV est garantie si vous avez résidé au Canada 40+ ans après 18 ans. ' +
+    'Moins de 40 ans → montant réduit proportionnellement (1/40 par année manquante).';
 }
 
 function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
@@ -2511,10 +2523,12 @@ function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
     ageDiv.className = 'rrq-option-age';
     ageDiv.textContent = age + ' ans';
     const montDiv = document.createElement('div');
+    montDiv.id = 'rrq-opt-mont-' + abl + '-' + age;
     montDiv.className = 'rrq-option-montant';
     if (hasOv) montDiv.style.color = 'var(--teal)';
     montDiv.textContent = fmt(affiche);
     const lblDiv = document.createElement('div');
+    lblDiv.id = 'rrq-opt-lbl-' + abl + '-' + age;
     lblDiv.className = 'rrq-option-label';
     lblDiv.textContent = hasOv ? '✏️ manuel' : 'calculé';
     opt.appendChild(ageDiv);
@@ -2555,11 +2569,13 @@ function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
       lbl.textContent = age + ' ans — montant réel ($/an)';
       const inp = document.createElement('input');
       inp.type = 'number';
+      inp.id = 'rrq-ov-inp-' + abl + '-' + age;
       inp.className = 'form-input';
       inp.placeholder = Math.round(calcule) + ' (calculé)';
       inp.value = (ov !== undefined && ov !== '') ? ov : '';
       inp.addEventListener('input', (function(a) { return function() { setRRQOverride(abl, a, this.value); }; })(age));
       const hint = document.createElement('div');
+      hint.id = 'rrq-ov-hint-' + abl + '-' + age;
       hint.className = 'form-hint';
       hint.style.color = 'var(--text3)';
       hint.textContent = 'Calculé: ' + fmt(calcule) + ' — laisser vide pour utiliser le calcul';
@@ -2576,6 +2592,7 @@ function renderRRQCard(prenom, ab, rrqData, opts, anneeNaiss) {
   const hasOvSelected = overrides[rrqData.ageDemandeRRQ] !== undefined && overrides[rrqData.ageDemandeRRQ] !== '';
   const anneeDemandeRRQ = anneeNaiss + rrqData.ageDemandeRRQ;
   const alert = document.createElement('div');
+  alert.id = 'rrq-alert-' + abl;
   alert.className = 'alert alert-info';
   alert.style.fontSize = '12px';
   alert.innerHTML = 'Rente sélectionnée: <strong>' + fmt(montantSelectionne) + '/an</strong> à ' +
@@ -2621,13 +2638,16 @@ function renderPSVCard(prenom, ab, psvData, psv65, psv70, anneeNaiss) {
     card.style.cssText = 'cursor:pointer; border:' + (isSel ? '1px solid var(--gold)' : '1px solid var(--border)');
     card.addEventListener('click', (function(a) { return function() { setPSVAge(abl, a); }; })(age));
     const lbl = document.createElement('div');
+    lbl.id = 'psv-card-lbl-' + abl + '-' + age;
     lbl.className = 'stat-label';
     lbl.textContent = 'À ' + age + ' ans' + (age === 70 ? ' (+36%)' : '') + (hasOv ? ' ✏️' : '');
     const val = document.createElement('div');
+    val.id = 'psv-card-val-' + abl + '-' + age;
     val.className = 'stat-value';
     val.style.cssText = 'font-size:18px;' + (hasOv ? 'color:var(--teal)' : '');
     val.textContent = fmt(aff);
     const sub = document.createElement('div');
+    sub.id = 'psv-card-sub-' + abl + '-' + age;
     sub.className = 'stat-sub';
     const anneePSV = anneeNaiss + age;
     const aff2026 = Math.round(aff / Math.pow(1.02, Math.max(0, age - (2026 - anneeNaiss))));
@@ -2688,6 +2708,7 @@ function renderPSVCard(prenom, ab, psvData, psv65, psv70, anneeNaiss) {
   const affiche = sel65 ? aff65 : aff70;
   const hasOvSel = sel65 ? hasOv65 : hasOv70;
   const al = document.createElement('div');
+  al.id = 'psv-alert-' + abl;
   al.className = 'alert alert-info';
   al.style.fontSize = '12px';
   al.innerHTML = 'Âge sélectionné: <strong>' + ageSel + ' ans</strong> → ' + fmt(affiche) + '/an — ' +
@@ -2722,12 +2743,58 @@ function supprimerHeritage(idx) {
 function updateHeritage(idx, field, val) {
   if (!APP.inputs.heritages || !APP.inputs.heritages[idx]) return;
   APP.inputs.heritages[idx][field] = val;
-  // Debounced save to not interrupt typing
+  if (field === 'annee') {
+    const hintEl = document.getElementById('heritage-hint-' + idx);
+    if (hintEl) {
+      const inp = APP.inputs;
+      const ageA = val - inp.anneeNaissanceA;
+      const ageB = val - inp.anneeNaissanceB;
+      hintEl.textContent = inp.prenomA + ': ' + ageA + ' ans | ' + inp.prenomB + ': ' + ageB + ' ans';
+    }
+  }
+  // Debounced save without re-rendering DOM so focus is never lost
   clearTimeout(window._heritageSaveTimer);
   window._heritageSaveTimer = setTimeout(function() {
     saveData();
-    renderDonneesTab('hypotheses');
   }, 600);
+}
+
+function updateProfilComputed() {
+  const inp = APP.inputs;
+  const anneeCalc = 2026;
+  const ageActA = document.getElementById('profil-age-actuel-A');
+  if (ageActA) ageActA.textContent = (anneeCalc - inp.anneeNaissanceA) + ' ans';
+  const ageActB = document.getElementById('profil-age-actuel-B');
+  if (ageActB) ageActB.textContent = (anneeCalc - inp.anneeNaissanceB) + ' ans';
+
+  const sepA = document.getElementById('profil-sep-scen-A');
+  if (sepA) sepA.textContent = 'Scénario retraite — ' + inp.prenomA;
+  const sepB = document.getElementById('profil-sep-scen-B');
+  if (sepB) sepB.textContent = 'Scénario retraite — ' + inp.prenomB;
+
+  const hintRetA = document.getElementById('profil-hint-ret-A');
+  if (hintRetA) {
+    hintRetA.textContent = 'Dans ' + (inp.anneeRetraiteA - anneeCalc) + ' an(s) — à ' + (inp.anneeRetraiteA - inp.anneeNaissanceA) + ' ans';
+  }
+  const hintRetB = document.getElementById('profil-hint-ret-B');
+  if (hintRetB) {
+    hintRetB.textContent = 'Dans ' + (inp.anneeRetraiteB - anneeCalc) + ' an(s) — à ' + (inp.anneeRetraiteB - inp.anneeNaissanceB) + ' ans';
+  }
+
+  const btnsA = document.getElementById('profil-scen-btns-A');
+  if (btnsA) {
+    btnsA.querySelectorAll('.scenario-btn').forEach(function(btn) {
+      const n = parseInt(btn.getAttribute('data-years'));
+      btn.classList.toggle('active', inp.anneeRetraiteA === anneeCalc + n);
+    });
+  }
+  const btnsB = document.getElementById('profil-scen-btns-B');
+  if (btnsB) {
+    btnsB.querySelectorAll('.scenario-btn').forEach(function(btn) {
+      const n = parseInt(btn.getAttribute('data-years'));
+      btn.classList.toggle('active', inp.anneeRetraiteB === anneeCalc + n);
+    });
+  }
 }
 
 function setInp(key, val) {
@@ -2741,6 +2808,17 @@ function setInp(key, val) {
       const residuel = Math.max(0, (APP.inputs.reee_solde||0) - (APP.inputs.reee_etudes||0));
       reeeEl.textContent = fmt(residuel) + ' transféré au non enregistré';
     }
+  }
+  if (key === 'epargneAnnuelleA' || key === 'pctReerA') {
+    const elA = document.getElementById('epargne-hint-reer-A');
+    if (elA) elA.textContent = 'REER: ' + fmt(APP.inputs.epargneAnnuelleA * APP.inputs.pctReerA) + ' | CELI: ' + fmt(APP.inputs.epargneAnnuelleA * (1 - APP.inputs.pctReerA));
+  }
+  if (key === 'epargneAnnuelleB' || key === 'pctReerB') {
+    const elB = document.getElementById('epargne-hint-reer-B');
+    if (elB) elB.textContent = 'REER: ' + fmt(APP.inputs.epargneAnnuelleB * APP.inputs.pctReerB) + ' | CELI: ' + fmt(APP.inputs.epargneAnnuelleB * (1 - APP.inputs.pctReerB));
+  }
+  if (key === 'prenomA' || key === 'prenomB' || key === 'anneeNaissanceA' || key === 'anneeNaissanceB' || key === 'anneeRetraiteA' || key === 'anneeRetraiteB') {
+    updateProfilComputed();
   }
   saveData();
   if (key === 'prenomA' || key === 'prenomB') {
@@ -2765,25 +2843,131 @@ function togglePension(key, el) {
   renderDonneesTab(key === 'pensionA' ? 'pension-a' : 'pension-b');
 }
 
+function updatePensionComputed(key) {
+  const inp = APP.inputs;
+  const isA = key === 'pensionA';
+  const pd = isA ? inp.pensionA : inp.pensionB;
+  if (!pd || !pd.active) return;
+  const anneeNaiss = isA ? inp.anneeNaissanceA : inp.anneeNaissanceB;
+  const anneeRet = isA ? inp.anneeRetraiteA : inp.anneeRetraiteB;
+  const ageRet = anneeRet - anneeNaiss;
+  const _aug = inp.augmentationSalaire || 0;
+  const _anneesRet = Math.max(0, anneeRet - 2026);
+  const _salFinal = (pd.salaire || 0) * Math.pow(1 + _aug, _anneesRet);
+  const _salMoy5 = _anneesRet >= 5
+    ? (_salFinal * [0,1,2,3,4].reduce((s,i) => s + Math.pow(1/(1+_aug), i), 0) / 5)
+    : _salFinal;
+  const renteCalc = calculerPensionPD({
+    typeRegime: pd.typeRegime,
+    tauxAccumulation: pd.tauxAccumulation,
+    anneesServiceActuel: pd.anneesServiceActuel,
+    salaire: _salMoy5,
+    anneeRetraite: anneeRet,
+    ageRetraite: ageRet,
+    ageSansPenalite: pd.ageSansPenalite,
+    tauxReductionAnnuel: pd.tauxReductionAnnuel,
+    indexationReport: pd.indexationReport,
+    indexationRente: pd.indexationRente,
+    coordRRQ: pd.coordRRQ,
+    ageDebutDecaissement: pd.ageDebutDecaissement,
+  });
+
+  const baseVal = document.getElementById('pension-stat-base-val');
+  const baseSub = document.getElementById('pension-stat-base-sub');
+  if (baseVal) baseVal.textContent = renteCalc ? fmt(renteCalc.renteBase) : '—';
+  if (baseSub) baseSub.textContent = renteCalc ? `${(pd.tauxAccumulation*100).toFixed(0)}% × ${Math.round(pd.anneesServiceActuel + anneeRet - 2026)} ans × ${fmt(Math.round(_salMoy5))}/an (moy. 5 ans)` : '';
+
+  const redVal = document.getElementById('pension-stat-red-val');
+  const redSub = document.getElementById('pension-stat-red-sub');
+  if (redVal) {
+    redVal.style.color = (renteCalc && renteCalc.reduction > 0) ? 'var(--coral)' : 'var(--green)';
+    redVal.textContent = renteCalc ? (renteCalc.reduction > 0 ? `-${(renteCalc.reduction*100).toFixed(0)}%` : 'Aucune') : '—';
+  }
+  if (redSub) redSub.textContent = `${ageRet} ans vs ${pd.ageSansPenalite} ans sans pénalité`;
+
+  const debVal = document.getElementById('pension-stat-deb-val');
+  const debSub = document.getElementById('pension-stat-deb-sub');
+  if (debVal) debVal.textContent = renteCalc ? fmt(renteCalc.renteAuDebut) : '—';
+  if (debSub) debSub.textContent = `À ${pd.ageDebutDecaissement} ans`;
+
+  const coordVal = document.getElementById('pension-stat-coord-val');
+  if (coordVal) coordVal.textContent = renteCalc ? fmt(renteCalc.coordMontant) : '—';
+
+  const ovInp = document.getElementById('pension-override-input');
+  if (ovInp) ovInp.placeholder = renteCalc ? Math.round(renteCalc.renteAuDebut) + ' (calculé)' : 'Ex: 35955';
+
+  const ovStat = document.getElementById('pension-override-status');
+  if (ovStat) {
+    ovStat.style.color = pd.overrideRente ? 'var(--teal)' : 'var(--text2)';
+    ovStat.textContent = pd.overrideRente ? '✏️ ' + fmt(pd.overrideRente) + '/an — montant manuel actif' : '⚙️ Calcul automatique';
+  }
+}
+
 function setPension(key, field, val) {
   APP.inputs[key][field] = val;
   saveData();
   // Immediate re-render only for select/toggle (no typing involved)
-  // Debounce for all numeric fields so focus isn't lost while typing
+  // In-place DOM update for all numeric fields so focus is never lost while typing
   const immediateFields = ['typeRegime', 'coordRRQ', 'active'];
   const tab = key === 'pensionA' ? 'pension-a' : 'pension-b';
   if (immediateFields.indexOf(field) >= 0) {
     renderDonneesTab(tab);
   } else {
-    clearTimeout(window._pensionTimer);
-    window._pensionTimer = setTimeout(function() { renderDonneesTab(tab); }, 1000);
+    updatePensionComputed(key);
   }
+}
+
+function updateRRQComputed() {
+  populateRRQVerifHint(document.getElementById('rrq-verif-hint'));
+  const inp = APP.inputs;
+  const ages = [60, 65, 70, 72];
+  [['a', inp.rrqA, inp.anneeNaissanceA, inp.anneeRetraiteA], ['b', inp.rrqB, inp.anneeNaissanceB, inp.anneeRetraiteB]].forEach(function(item) {
+    const abl = item[0], rrqData = item[1], anneeNaiss = item[2], anneeRet = item[3];
+    if (!rrqData) return;
+    const ageCess = anneeRet - anneeNaiss;
+    const opts = calculerOptionsRRQ({ anneeNaissance: anneeNaiss, anneeCalc: 2026,
+      revenusCotisesMoyens: rrqData.revenusCotisesMoyens, ageCessationCotisation: ageCess });
+    const overrides = rrqData.overrides || {};
+    function montantPour(age) {
+      const ov = overrides[age];
+      return (ov !== undefined && ov !== null && ov !== '') ? parseFloat(ov) : opts['rrq' + age];
+    }
+    ages.forEach(function(age) {
+      const affiche = montantPour(age);
+      const hasOv = overrides[age] !== undefined && overrides[age] !== null && overrides[age] !== '';
+      const montDiv = document.getElementById('rrq-opt-mont-' + abl + '-' + age);
+      if (montDiv) {
+        montDiv.style.color = hasOv ? 'var(--teal)' : '';
+        montDiv.textContent = fmt(affiche);
+      }
+      const lblDiv = document.getElementById('rrq-opt-lbl-' + abl + '-' + age);
+      if (lblDiv) lblDiv.textContent = hasOv ? '✏️ manuel' : 'calculé';
+
+      const calcule = opts['rrq' + age];
+      const ovInp = document.getElementById('rrq-ov-inp-' + abl + '-' + age);
+      if (ovInp) ovInp.placeholder = Math.round(calcule) + ' (calculé)';
+      const ovHint = document.getElementById('rrq-ov-hint-' + abl + '-' + age);
+      if (ovHint) ovHint.textContent = 'Calculé: ' + fmt(calcule) + ' — laisser vide pour utiliser le calcul';
+    });
+
+    const alertEl = document.getElementById('rrq-alert-' + abl);
+    if (alertEl) {
+      const montantSelectionne = montantPour(rrqData.ageDemandeRRQ);
+      const hasOvSelected = overrides[rrqData.ageDemandeRRQ] !== undefined && overrides[rrqData.ageDemandeRRQ] !== '';
+      const anneeDemandeRRQ = anneeNaiss + rrqData.ageDemandeRRQ;
+      alertEl.innerHTML = 'Rente sélectionnée: <strong>' + fmt(montantSelectionne) + '/an</strong> à ' +
+        rrqData.ageDemandeRRQ + ' ans (en ' + anneeDemandeRRQ + ') — ' +
+        (hasOvSelected
+          ? '<span style="color:var(--teal)">✏️ montant manuel</span>'
+          : '<span style="color:var(--text3)">calcul automatique</span>');
+    }
+  });
 }
 
 function setRRQ(ab, val) {
   APP.inputs['rrq' + ab.toUpperCase()].revenusCotisesMoyens = val;
   saveData();
-  renderDonneesTab('rrq');
+  updateRRQComputed();
 }
 
 function setRRQAge(ab, age) {
@@ -2797,7 +2981,7 @@ function setRRQOverride(ab, age, val) {
   if (!APP.inputs[key].overrides) APP.inputs[key].overrides = {};
   APP.inputs[key].overrides[age] = val === '' ? '' : parseFloat(val) || '';
   saveData();
-  renderDonneesTab('rrq');
+  updateRRQComputed();
 }
 
 function toggleRRQManuel(ab) {
@@ -2805,6 +2989,51 @@ function toggleRRQManuel(ab) {
   APP.inputs[key].modeManuel = !APP.inputs[key].modeManuel;
   saveData();
   renderDonneesTab('rrq');
+}
+
+function updatePSVComputed() {
+  populatePSVVerifHint(document.getElementById('psv-verif-hint'));
+  const inp = APP.inputs;
+  [['a', inp.psvA, inp.anneeNaissanceA], ['b', inp.psvB, inp.anneeNaissanceB]].forEach(function(item) {
+    const abl = item[0], psvData = item[1], anneeNaiss = item[2];
+    const psv65 = calculerPSV(anneeNaiss, 2026, 65);
+    const psv70 = calculerPSV(anneeNaiss, 2026, 70);
+    const ov65 = psvData && psvData.override65;
+    const ov70 = psvData && psvData.override70;
+    const hasOv65 = ov65 !== undefined && ov65 !== '';
+    const hasOv70 = ov70 !== undefined && ov70 !== '';
+    const aff65 = hasOv65 ? parseFloat(ov65) : psv65;
+    const aff70 = hasOv70 ? parseFloat(ov70) : psv70;
+    const ageSel = psvData ? (psvData.ageDemande || 65) : 65;
+    const sel65 = ageSel === 65;
+
+    [[65, aff65, hasOv65], [70, aff70, hasOv70]].forEach(function(row) {
+      const age = row[0], aff = row[1], hasOv = row[2];
+      const lbl = document.getElementById('psv-card-lbl-' + abl + '-' + age);
+      if (lbl) lbl.textContent = 'À ' + age + ' ans' + (age === 70 ? ' (+36%)' : '') + (hasOv ? ' ✏️' : '');
+      const val = document.getElementById('psv-card-val-' + abl + '-' + age);
+      if (val) {
+        val.style.color = hasOv ? 'var(--teal)' : '';
+        val.textContent = fmt(aff);
+      }
+      const sub = document.getElementById('psv-card-sub-' + abl + '-' + age);
+      if (sub) {
+        const anneePSV = anneeNaiss + age;
+        const aff2026 = Math.round(aff / Math.pow(1.02, Math.max(0, age - (2026 - anneeNaiss))));
+        sub.innerHTML = '<span style="color:var(--text3);font-size:10px;">dollars ' + anneePSV + '</span><br>~' + fmt(aff2026) + ' en $2026';
+      }
+    });
+
+    const al = document.getElementById('psv-alert-' + abl);
+    if (al) {
+      const affiche = sel65 ? aff65 : aff70;
+      const hasOvSel = sel65 ? hasOv65 : hasOv70;
+      al.innerHTML = 'Âge sélectionné: <strong>' + ageSel + ' ans</strong> → ' + fmt(affiche) + '/an — ' +
+        (hasOvSel
+          ? '<span style="color:var(--teal)">✏️ montant manuel</span>'
+          : '<span style="color:var(--text3)">calcul automatique</span>');
+    }
+  });
 }
 
 function setPSVAge(ab, age) {
@@ -2820,7 +3049,7 @@ function setPSVOverride(ab, age, val) {
   if (!APP.inputs[key]) APP.inputs[key] = { ageDemande: 65 };
   APP.inputs[key]['override' + age] = val === '' ? '' : parseFloat(val) || '';
   saveData();
-  renderDonneesTab('psv');
+  updatePSVComputed();
 }
 
 function togglePSVManuel(ab) {
